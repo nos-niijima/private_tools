@@ -1,0 +1,2050 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>フランプ道場 — アコギ練習アプリ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap');
+  :root{
+    --night:#101726; --night-2:#182236; --panel:#1e2a42; --line:#2c3a58;
+    --ink:#e8ecf5; --ink-dim:#9aa7c0;
+    --star:#f5d67b; --wood:#c98a5b; --ok:#7fd6a4; --miss:#d97b7b;
+    --radius:14px;
+    --font-body:'Zen Kaku Gothic New',-apple-system,'Hiragino Kaku Gothic ProN',sans-serif;
+    --font-display:'Shippori Mincho','Hiragino Mincho ProN',serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--night);color:var(--ink);font-family:var(--font-body);line-height:1.7}
+  body{padding-bottom:50px}
+  .wrap{max-width:940px;margin:0 auto;padding:0 22px}
+
+  header{position:relative;overflow:hidden;padding:40px 0 30px;
+    background:radial-gradient(ellipse 120% 90% at 50% -20%, #223055 0%, var(--night) 70%)}
+  .stars{position:absolute;inset:0;pointer-events:none}
+  .stars span{position:absolute;background:var(--star);border-radius:50%;opacity:.7;animation:tw 3.4s ease-in-out infinite}
+  @keyframes tw{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:.9;transform:scale(1)}}
+  @media (prefers-reduced-motion:reduce){.stars span{animation:none}}
+  .eyebrow{font-size:11px;letter-spacing:.28em;color:var(--star);font-weight:700;text-transform:uppercase}
+  h1{font-family:var(--font-display);font-weight:800;font-size:clamp(26px,5.4vw,38px);letter-spacing:.06em;margin:8px 0 4px}
+  .sub{color:var(--ink-dim);font-size:13px}
+
+  section{margin-top:28px}
+  h2{font-family:var(--font-display);font-size:18px;letter-spacing:.08em;margin-bottom:4px}
+  .lede{color:var(--ink-dim);font-size:12.5px;margin-bottom:12px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12px;color:var(--ink-dim);font-weight:700;margin-bottom:5px}
+  textarea,input[type=number]{width:100%;background:var(--night);border:1px solid var(--line);
+    color:var(--ink);border-radius:10px;padding:10px 12px;font-family:var(--font-body);font-size:15px}
+  textarea{min-height:76px;resize:vertical;letter-spacing:.08em}
+  textarea:focus,input:focus{outline:2px solid var(--star);outline-offset:1px;border-color:transparent}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .presets{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+  .chip{background:var(--night-2);border:1px solid var(--line);color:var(--ink-dim);border-radius:99px;
+    padding:6px 14px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:all .15s}
+  .chip:hover,.chip.active{border-color:var(--star);color:var(--star)}
+  .chip small{font-weight:400;opacity:.7;font-size:10px}
+
+  /* ---------- setup panels(デスクトップ向け整理) ---------- */
+  .subtabs{display:flex;width:max-content;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:10px}
+  .subtab{background:transparent;border:none;color:var(--ink-dim);font-family:var(--font-body);
+    font-size:13px;font-weight:700;padding:9px 20px;cursor:pointer;transition:all .15s}
+  .subtab+.subtab{border-left:1px solid var(--line)}
+  .subtab:hover{color:var(--ink)}
+  .subtab.active{background:var(--night-2);color:var(--star)}
+  .subtab:focus-visible{outline:2px solid var(--star);outline-offset:-2px}
+  .subpanel{background:var(--night-2);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .panel-hint{font-size:11.5px;color:var(--ink-dim);margin-bottom:10px}
+  .subpanel .presets{justify-content:flex-start}
+  .subpanel .chip{padding:5px 13px;font-size:12.5px}
+  .tool-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  .tool-label{font-size:11px;color:var(--ink-dim);font-weight:700;letter-spacing:.04em;margin-right:4px}
+  .tool-sep{width:1px;height:18px;background:var(--line);margin:0 4px}
+  .settings-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:16px}
+  .settings-row .field{margin-bottom:0}
+  @media (max-width:720px){
+    .settings-row{grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}
+    .subtab{padding:9px 12px;font-size:12px}
+  }
+  .chip:focus-visible{outline:2px solid var(--star);outline-offset:2px}
+
+  .btn{font-family:var(--font-body);font-weight:700;font-size:14px;border:none;cursor:pointer;
+    border-radius:99px;padding:11px 28px;transition:transform .1s,filter .15s}
+  .btn:active{transform:scale(.96)}
+  .btn:focus-visible{outline:2px solid var(--star);outline-offset:2px}
+  .btn-main{background:var(--wood);color:var(--night)}
+  .btn-main:hover{filter:brightness(1.1)}
+  .btn-ghost{background:transparent;color:var(--ink-dim);border:1px solid var(--line);padding:10px 18px}
+  .btn-ghost:hover{color:var(--ink);border-color:var(--ink-dim)}
+  .start-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:6px}
+  .mic-state{font-size:12px;color:var(--ink-dim);text-align:center;margin-top:8px;min-height:1.2em}
+  .warn{color:var(--star)}
+
+  /* ---------- game ---------- */
+  #game{display:none}
+  .hud{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;flex-wrap:wrap;gap:6px}
+  .hud .score{font-family:var(--font-display);font-size:26px;letter-spacing:.05em}
+  .hud .combo{font-size:13px;color:var(--ink-dim)}
+  .hud .combo b{color:var(--star);font-size:17px}
+  .hud .lap{font-size:12.5px;color:var(--ink-dim);letter-spacing:.06em}
+  canvas{width:100%;height:auto;display:block;border-radius:var(--radius);
+    border:1px solid var(--line);background:linear-gradient(180deg,#141d33,#101726)}
+  .judge-pop{text-align:center;font-family:var(--font-display);font-size:22px;height:34px;letter-spacing:.1em}
+  .judge-pop.perfect{color:var(--star)}
+  .judge-pop.good{color:var(--ok)}
+  .judge-pop.miss{color:var(--miss)}
+  .game-controls{display:flex;justify-content:center;gap:10px;margin-top:10px}
+
+  /* ---------- result ---------- */
+  #result{display:none;text-align:center}
+  #result .rank{font-family:var(--font-display);font-size:76px;color:var(--star);line-height:1.1}
+  #result .r-sub{color:var(--ink-dim);font-size:13px;margin-bottom:14px}
+  .r-stats{display:flex;justify-content:center;gap:26px;margin:14px 0 20px;flex-wrap:wrap}
+  .r-stats div{text-align:center}
+  .r-stats .n{font-family:var(--font-display);font-size:28px}
+  .r-stats .l{font-size:11px;color:var(--ink-dim);letter-spacing:.1em}
+  .r-stats .perfect .n{color:var(--star)} .r-stats .good .n{color:var(--ok)} .r-stats .miss .n{color:var(--miss)}
+
+  /* ---------- checker ---------- */
+  #checker{display:block}
+  .chords{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+  .chord{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:12px 8px 8px;text-align:center;cursor:pointer;transition:border-color .15s,transform .1s}
+  .chord:hover{border-color:var(--wood)}
+  .chord:active{transform:scale(.98)}
+  .chord.selected{border-color:var(--star);background:var(--night-2)}
+  .chord h3{font-family:var(--font-display);font-size:18px;color:var(--star);letter-spacing:.04em}
+  .chord .tag{display:inline-block;font-size:10px;color:var(--night);background:var(--wood);
+    border-radius:99px;padding:1px 8px;margin-top:2px;font-weight:700}
+  .chord svg{margin-top:6px;width:100%;height:auto}
+  .chord .memo{font-size:10.5px;color:var(--ink-dim);margin-top:3px;min-height:2.4em;line-height:1.4}
+  .verdict{display:flex;align-items:center;justify-content:center;gap:14px;
+    min-height:70px;border-radius:12px;background:var(--night);border:1px solid var(--line);
+    margin-bottom:14px;transition:border-color .15s}
+  .verdict .v-mark{font-family:var(--font-display);font-size:34px;line-height:1}
+  .verdict .v-text{font-size:13.5px;color:var(--ink-dim)}
+  .verdict.good{border-color:var(--ok)} .verdict.good .v-mark{color:var(--ok)}
+  .verdict.close{border-color:var(--star)} .verdict.close .v-mark{color:var(--star)}
+  .verdict.bad{border-color:var(--miss)} .verdict.bad .v-mark{color:var(--miss)}
+  .chroma{display:flex;gap:4px;align-items:flex-end;height:56px;margin-bottom:26px}
+  .chroma .bar{flex:1;background:var(--line);border-radius:3px 3px 0 0;height:4%;
+    transition:height .1s;position:relative;min-height:3px}
+  .chroma .bar.hit{background:var(--wood)}
+  .chroma .bar span{position:absolute;bottom:-17px;left:50%;transform:translateX(-50%);
+    font-size:9px;color:var(--ink-dim)}
+
+  /* ---------- tuner ---------- */
+  .tuner-note{text-align:center;margin-bottom:14px}
+  .tuner-note span{font-family:var(--font-display);font-size:56px;letter-spacing:.04em;line-height:1}
+  .tuner-note small{display:block;font-size:13px;color:var(--ink-dim);margin-top:2px;font-variant-numeric:tabular-nums}
+  .tuner-note.in-tune span{color:var(--ok)}
+  .meter{position:relative;height:56px;background:var(--night);border:1px solid var(--line);
+    border-radius:12px;overflow:hidden}
+  .meter-scale{position:absolute;inset:0;display:flex;justify-content:space-between;padding:0 6%}
+  .meter-scale i{width:1px;height:100%;background:var(--line)}
+  .meter-zone{position:absolute;top:0;bottom:0;left:calc(50% - 4%);width:8%;
+    background:rgba(127,214,164,.12);border-left:1px solid rgba(127,214,164,.4);border-right:1px solid rgba(127,214,164,.4)}
+  .needle{position:absolute;top:6px;bottom:6px;left:50%;width:3px;border-radius:2px;
+    background:var(--ink-dim);transform:translateX(-50%);transition:left .09s,background .09s}
+  .needle.in-tune{background:var(--ok);box-shadow:0 0 12px rgba(127,214,164,.6)}
+  .meter-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-dim);margin:6px 2px 14px}
+  .strings{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .string{background:var(--night-2);border:1px solid var(--line);border-radius:10px;
+    padding:6px 10px;text-align:center;min-width:56px}
+  .string .s-no{font-size:9.5px;color:var(--ink-dim);letter-spacing:.08em}
+  .string .s-note{font-family:var(--font-display);font-size:17px}
+  .string.hit{border-color:var(--ok)}
+  .string.hit .s-note{color:var(--ok)}
+
+  /* ---------- section toggle ---------- */
+  .sec-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .toggle{min-width:52px}
+  .toggle.off{color:var(--ink-dim);border-color:var(--line);opacity:.7}
+  section.disabled .lede{display:none}
+
+  /* ---------- per-string panel ---------- */
+  .str-panel{display:flex;gap:6px;margin-bottom:8px}
+  .str-cell{flex:1;background:var(--night);border:1px solid var(--line);border-radius:10px;
+    padding:7px 2px;text-align:center;transition:border-color .12s,background .12s}
+  .str-cell .c-no{font-size:9px;color:var(--ink-dim);letter-spacing:.06em}
+  .str-cell .c-note{font-family:var(--font-display);font-size:16px;line-height:1.3}
+  .str-cell.mute{opacity:.45}
+  .str-cell.on{border-color:var(--ok);background:rgba(127,214,164,.08)}
+  .str-cell.on .c-note{color:var(--ok)}
+  .str-cell.off{border-color:var(--miss);background:rgba(217,123,123,.08)}
+  .str-cell.off .c-note{color:var(--miss)}
+  .str-legend{font-size:11px;color:var(--ink-dim);margin-bottom:14px}
+  .str-legend .lg-on{color:var(--ok)} .str-legend .lg-off{color:var(--miss)}
+
+  /* ---------- lesson ---------- */
+  .stage-list{list-style:none}
+  .stage{display:flex;align-items:center;gap:12px;padding:11px 4px;border-top:1px solid var(--line)}
+  .stage:first-child{border-top:none}
+  .stage .st-mark{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;
+    font-size:13px;font-weight:700;border:1.5px solid var(--line);color:var(--ink-dim)}
+  .stage.done .st-mark{border-color:var(--star);background:var(--star);color:var(--night)}
+  .stage.current .st-mark{border-color:var(--wood);color:var(--wood)}
+  .stage .st-body{flex:1;min-width:0}
+  .stage .st-title{font-size:14px;font-weight:700}
+  .stage .st-desc{font-size:11.5px;color:var(--ink-dim)}
+  .stage.locked{opacity:.42}
+  .stage.done .st-title{color:var(--ink-dim)}
+  .stage .btn{padding:7px 18px;font-size:13px;flex-shrink:0}
+  .drill{margin-top:16px;border-top:1px solid var(--line);padding-top:16px;text-align:center}
+  .drill-title{font-family:var(--font-display);font-size:20px;color:var(--star);margin-bottom:8px}
+  .drill-dots{display:flex;gap:10px;justify-content:center;margin-bottom:10px}
+  .drill-dots i{width:16px;height:16px;border-radius:50%;border:2px solid var(--line)}
+  .drill-dots i.got{background:var(--ok);border-color:var(--ok)}
+  .drill-hint{font-size:12px;color:var(--ink-dim);margin-bottom:12px}
+  .drill-svg{max-width:190px;margin:0 auto 6px}
+  .drill-svg:empty{display:none}
+  .mode-row{margin-top:34px;text-align:center;opacity:.65}
+
+  /* ---------- game 演出 ---------- */
+  .now-chords{display:flex;gap:10px;align-items:stretch;margin-bottom:10px;flex-wrap:wrap}
+  .nc-slot{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:8px 10px 4px;text-align:center;flex:0 0 148px}
+  .nc-slot.small{flex:0 0 112px;opacity:.72}
+  .nc-label{font-size:9.5px;color:var(--ink-dim);letter-spacing:.2em}
+  .nc-name{font-family:var(--font-display);font-size:20px;color:var(--star);line-height:1.2;min-height:1.2em}
+  .nc-slot.small .nc-name{font-size:15px}
+  .nc-slot svg{width:100%;height:auto}
+  .nc-guide{flex:1;align-self:center;font-size:10.5px;color:var(--ink-dim);line-height:1.55;text-align:right}
+  .nc-guide span{color:var(--wood)}
+  @keyframes popjump{0%{transform:scale(.4);opacity:0}35%{transform:scale(1.3);opacity:1}100%{transform:scale(1)}}
+  .judge-pop.pop{animation:popjump .38s ease-out}
+  @keyframes comboPop{0%{transform:scale(1.7)}100%{transform:scale(1)}}
+  .hud .combo b.pop{display:inline-block;animation:comboPop .28s ease-out}
+  @media (max-width:520px){.nc-guide{display:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="stars" id="starsBg" aria-hidden="true"></div>
+  <div class="wrap">
+    <p class="eyebrow">flumpool Chord Dojo</p>
+    <h1>フランプ道場</h1>
+    <p class="sub">流れてくるコードに合わせて鳴らそう。門下曲:星に願いを(カポ2)/ 君に届け(カポ4)</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- レッスンモード -->
+  <section id="lesson">
+    <div class="sec-head">
+      <h2>レッスンモード</h2>
+      <button class="chip toggle" id="lessonToggle" aria-pressed="true">ON</button>
+    </div>
+    <div id="lessonBody">
+    <p class="lede">上から順にクリアして「星に願いを」完奏を目指す段階レッスン。コード課題はチェッカー、曲課題はゲームが自動でセットされます。進捗は保存されます。</p>
+    <div class="card">
+      <ol class="stage-list" id="stageList"></ol>
+      <div class="drill" id="drillBox" style="display:none">
+        <p class="drill-title" id="drillTitle"></p>
+        <div class="drill-svg" id="drillMoveSvg"></div>
+        <div class="drill-dots" id="drillDots"></div>
+        <p class="drill-hint" id="drillHint">下のチェッカーが自動でこのコードになっています。ジャン!と鳴らして○を集めよう。</p>
+        <div class="start-row">
+          <button class="btn btn-main" id="drillNext" style="display:none">できた、次へ</button>
+          <button class="btn btn-ghost" id="drillQuit">ドリルをやめる</button>
+        </div>
+      </div>
+    </div>
+    </div>
+  </section>
+
+  <!-- 設定画面 -->
+  <section id="setup">
+    <h2>進行をつくる</h2>
+    <p class="lede">記法:「D:2」=拍数 / 「D*4」=鳴らす回数 / 「-」=1小節伸ばす / 「N.C.」=休み / 【見出し】=メモ(読み飛ばし)</p>
+    <div class="card">
+      <div class="field" style="margin-bottom:14px">
+        <label for="seqInput">コード進行</label>
+        <textarea id="seqInput" spellcheck="false">D A Bm7 G D A Bm7 G</textarea>
+      </div>
+
+      <div class="subtabs" role="tablist">
+        <button class="subtab active" data-p="panelPresets">曲から選ぶ</button>
+        <button class="subtab" data-p="panelBuilder">譜面ビルダー</button>
+        <button class="subtab" data-p="panelPairs">チェンジ特訓</button>
+      </div>
+
+      <div class="subpanel" id="panelPresets">
+        <p class="panel-hint">セクション単位のプリセット。BPM・カポも一緒にセットされます。</p>
+        <div class="presets" id="presetRow">
+          <button class="chip" data-key="loop">基本ループ</button>
+          <button class="chip" data-key="sabi">星に願いを:サビ</button>
+          <button class="chip" data-key="ab">星に願いを:イントロ〜Bメロ</button>
+          <button class="chip" data-key="c">星に願いを:Cメロ〜ラスト</button>
+          <button class="chip" data-key="full">星に願いを:フル</button>
+          <button class="chip" data-key="kimiSabi">君に届け:サビ</button>
+          <button class="chip" data-key="kimiAB">君に届け:イントロ〜Bメロ</button>
+          <button class="chip" data-key="kimiC">君に届け:Cメロ〜ラスト</button>
+          <button class="chip" data-key="kimiFull">君に届け:フル</button>
+        </div>
+      </div>
+
+      <div class="subpanel" id="panelBuilder" hidden>
+        <p class="panel-hint">コードをタップで末尾に追加。範囲の操作は、入力欄をドラッグ選択してから。</p>
+        <div class="presets" id="chordPalette"></div>
+        <div class="tool-row">
+          <span class="tool-label">追加する刻み</span>
+          <button class="chip active" data-b="4" id="pb4">白玉(4拍)</button>
+          <button class="chip" data-b="2" id="pb2">2拍</button>
+          <button class="chip" data-b="1" id="pb1">1拍</button>
+          <span class="tool-sep"></span>
+          <button class="chip" id="palUndo">1つ戻す</button>
+          <button class="chip" id="palClear">全クリア</button>
+        </div>
+        <div class="tool-row" id="rangeRow">
+          <span class="tool-label">選択範囲を(選択なし=全体)</span>
+          <button class="chip" data-rep="2">×2に増やす</button>
+          <button class="chip" data-rep="4">×4に増やす</button>
+          <span class="tool-sep"></span>
+          <button class="chip" data-rb="4">白玉にする</button>
+          <button class="chip" data-rb="2">2拍にする</button>
+          <button class="chip" data-rb="1">1拍にする</button>
+        </div>
+      </div>
+
+      <div class="subpanel" id="panelPairs" hidden>
+        <p class="panel-hint">曲に登場するコード移動を回数順に表示。タップで反復セット(3周・BPM+5/周)を自動生成。</p>
+        <div class="presets" id="pairRow"></div>
+        <div class="tool-row">
+          <span class="tool-label">刻み</span>
+          <span class="presets" id="pairBeatRow" style="display:contents">
+            <button class="chip" data-b="4">白玉(4拍)</button>
+            <button class="chip active" data-b="2">2拍</button>
+            <button class="chip" data-b="1">1拍</button>
+          </span>
+        </div>
+      </div>
+
+      <div class="settings-row">
+        <div class="field">
+          <label for="bpmInput">BPM</label>
+          <input type="number" id="bpmInput" min="40" max="180" value="90">
+        </div>
+        <div class="field">
+          <label for="beatsInput">1コードの拍数</label>
+          <input type="number" id="beatsInput" min="2" max="8" value="4">
+        </div>
+        <div class="field">
+          <label for="capoInput">カポ位置</label>
+          <input type="number" id="capoInput" min="0" max="7" value="2">
+        </div>
+        <div class="field">
+          <label for="loopInput">繰り返し(周)</label>
+          <input type="number" id="loopInput" min="1" max="99" value="1">
+        </div>
+        <div class="field">
+          <label for="rampInput">BPM変化 / 周</label>
+          <input type="number" id="rampInput" min="-20" max="20" value="0">
+        </div>
+      </div>
+
+      <div class="start-row">
+        <button class="btn btn-ghost" id="micToggle">マイクON(判定あり)</button>
+        <button class="btn btn-main" id="startBtn">プレイ開始</button>
+      </div>
+      <p class="mic-state" id="micState">マイクOFFのままでもプレイできます(判定なしの流し練習モード)</p>
+    </div>
+    <p class="lede" style="margin-top:10px">使えるコード:全ルート(♯・♭可)× メジャー / m / 7 / m7 / M7 / 6 / m6 / 9 / add9 / maj9 / sus2 / sus4 / 7sus4 / dim / dim7 / aug / m7b5。分数コード(A/C#等)はルート側で判定します。</p>
+  </section>
+
+  <!-- コードチェッカー -->
+  <section id="checker">
+    <div class="sec-head">
+      <h2>コードチェッカー</h2>
+      <button class="chip toggle" id="checkerToggle" aria-pressed="true">ON</button>
+    </div>
+    <div id="checkerBody">
+    <p class="lede">カポ位置に連動したコード表。カードをタップして選び、マイクONで鳴らすと判定します。丸の色=指:<span style="color:#f5d67b">●1人差し指</span> <span style="color:#7fd6a4">●2中指</span> <span style="color:#7fb8f0">●3薬指</span> <span style="color:#e08ac2">●4小指</span>。コード間で同じ色を追うと指の移動先がわかります。</p>
+    <div class="chords" id="chordGrid"></div>
+    <div class="card" style="margin-top:12px">
+      <div class="verdict" id="verdict"><span class="v-mark">—</span><span class="v-text">コードを選んでマイクをONに</span></div>
+      <div class="str-panel" id="strPanel"></div>
+      <p class="str-legend">鳴らすと弦ごとに判定:<span class="lg-on">緑=鳴ってる</span> / <span class="lg-off">赤=鳴ってない</span> / ×=弾かない弦。音名はカポ込みの実音です。「◯◯に近づいてます」=どこかの弦の音が欠けて別コードの響きになっている状態で、メッセージ内の弦が原因です。</p>
+      <div class="chroma" id="chroma"></div>
+      <div class="start-row">
+        <button class="btn btn-ghost" id="checkerMicBtn">マイクをON</button>
+      </div>
+    </div>
+    </div>
+  </section>
+
+  <!-- チューナー -->
+  <section id="tuner">
+    <div class="sec-head">
+      <h2>チューナー</h2>
+      <button class="chip toggle" id="tunerToggle" aria-pressed="true">ON</button>
+    </div>
+    <div id="tunerBody">
+    <p class="lede">1本ずつ弦を鳴らしてください。合わせる時はカポなし、カポ装着後は「確認」に使います(目標音はカポ設定に連動)。</p>
+    <div class="card">
+      <div class="tuner-note"><span id="tNote">—</span><small id="tCents">±0¢</small></div>
+      <div class="meter" aria-hidden="true">
+        <div class="meter-scale"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="meter-zone"></div>
+        <div class="needle" id="needle"></div>
+      </div>
+      <div class="meter-labels"><span>低い ♭</span><span id="tHint">マイクON後、弦を鳴らして</span><span>高い ♯</span></div>
+      <div class="strings" id="stringRow"></div>
+    </div>
+    </div>
+  </section>
+
+  <!-- ゲーム画面 -->
+  <section id="game">
+    <div class="hud">
+      <div class="score" id="scoreDisp">0</div>
+      <div class="lap" id="lapDisp"></div>
+      <div class="combo">COMBO <b id="comboDisp">0</b></div>
+    </div>
+    <div class="now-chords">
+      <div class="nc-slot"><div class="nc-label">NOW</div><div class="nc-name" id="ncCurName">—</div><div id="ncCurSvg"></div></div>
+      <div class="nc-slot"><div class="nc-label">指の動き</div><div class="nc-name" style="font-size:13px;color:var(--ink-dim)">NOW→NEXT</div><div id="ncMoveSvg"></div></div>
+      <div class="nc-slot small"><div class="nc-label">NEXT</div><div class="nc-name" id="ncNextName">—</div><div id="ncNextSvg"></div></div>
+      <div class="nc-guide">指の色<br><span style="color:#f5d67b">●1 人差し指</span><br><span style="color:#7fd6a4">●2 中指</span><br><span style="color:#7fb8f0">●3 薬指</span><br><span style="color:#e08ac2">●4 小指</span><br><span>薄くなる丸=離す<br>現れる丸=新しく押さえる</span></div>
+    </div>
+    <canvas id="cv" width="820" height="330"></canvas>
+    <div class="judge-pop" id="judgePop"></div>
+    <div class="game-controls">
+      <button class="btn btn-ghost" id="quitBtn">やめる</button>
+    </div>
+  </section>
+
+  <!-- リザルト画面 -->
+  <section id="result">
+    <div class="card">
+      <div class="rank" id="rankDisp">A</div>
+      <p class="r-sub" id="rankSub"></p>
+      <div class="r-stats">
+        <div class="perfect"><div class="n" id="rPerfect">0</div><div class="l">PERFECT</div></div>
+        <div class="good"><div class="n" id="rGood">0</div><div class="l">GOOD</div></div>
+        <div class="miss"><div class="n" id="rMiss">0</div><div class="l">MISS</div></div>
+      </div>
+      <div class="start-row">
+        <button class="btn btn-main" id="retryBtn">もう一回</button>
+        <button class="btn btn-ghost" id="backBtn">進行を変える</button>
+      </div>
+    </div>
+  </section>
+
+  <p class="mode-row"><button class="chip" id="songModeBtn">別の門下曲(星に願いを)に切り替える</button></p>
+
+</div>
+
+<script>
+/* ===== 星空 ===== */
+(function(){
+  const box=document.getElementById('starsBg');
+  for(let i=0;i<34;i++){
+    const s=document.createElement('span');
+    const sz=Math.random()*2.2+1;
+    s.style.width=s.style.height=sz+'px';
+    s.style.left=Math.random()*100+'%';
+    s.style.top=Math.random()*100+'%';
+    s.style.animationDelay=(Math.random()*3)+'s';
+    box.appendChild(s);
+  }
+})();
+
+/* ===== コード→構成音(ピッチクラス) ===== */
+const NOTE_PC={'C':0,'C#':1,'DB':1,'D':2,'D#':3,'EB':3,'E':4,'F':5,'F#':6,'GB':6,'G':7,'G#':8,'AB':8,'A':9,'A#':10,'BB':10,'B':11};
+function chordToPcs(name){
+  const parts=name.split('/');
+  const base=parts[0].trim();
+  const m=base.match(/^([A-G][#b]?)(.*)$/i);
+  if(!m) return null;
+  const root=NOTE_PC[m[1].toUpperCase().replace('b','B')];
+  if(root===undefined) return null;
+  let q=m[2].toLowerCase();
+  const T=iv=>[...new Set(iv.map(x=>(x+root)%12))];
+  let res;
+  /* 特殊コードは先に確定 */
+  if(q.includes('m7b5')||q.includes('m7-5')) res=T([0,3,6,10]);
+  else if(q.includes('dim7')) res=T([0,3,6,9]);
+  else if(q.includes('dim')) res=T([0,3,6]);
+  else if(q.includes('aug')) res=T([0,4,8]);
+  else{
+    const minor=/^m(?!aj)/.test(q);
+    let pcs=[0,minor?3:4,7];
+    if(q.includes('sus4')) pcs=[0,5,7];
+    else if(q.includes('sus2')) pcs=[0,2,7];
+    if(q.includes('maj9')) pcs.push(11,2);
+    else if(q.includes('m7')&&!q.includes('maj')) pcs.push(10);
+    else if(q.includes('maj7')||q.includes('M7')) pcs.push(11);
+    else if(q.includes('9')&&!q.includes('add9')) pcs.push(10,2);   /* C9等のドミナント9th */
+    else if(q.includes('7')) pcs.push(10);
+    if(q.includes('6')) pcs.push(9);
+    if(q.includes('add9')) pcs.push(2);
+    res=T(pcs);
+  }
+  /* 分数コードのベース音も構成音に含める(G/FのF等) */
+  if(parts[1]){
+    const bm=parts[1].trim().match(/^([A-G][#b]?)/i);
+    if(bm){
+      const bp=NOTE_PC[bm[1].toUpperCase().replace('b','B')];
+      if(bp!==undefined&&!res.includes(bp)) res=[...res,bp];
+    }
+  }
+  return res;
+}
+
+/* ===== コード解析(倍音テンプレート+識別的スコア) ===== */
+const NOTE_NAMES_A=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+/* ギターの1音は倍音の柱で鳴るので、テンプレート側に倍音を織り込む(HPCP的手法) */
+function buildTemplate(pcs){
+  const v=new Array(12).fill(0);
+  pcs.forEach(p=>{
+    v[p]+=1.0;
+    v[(p+7)%12]+=0.33;   /* 第3倍音(完全5度上) */
+    v[(p+4)%12]+=0.17;   /* 第5倍音(長3度上) */
+  });
+  const n=Math.hypot(...v)||1;
+  return v.map(x=>x/n);
+}
+/* 比較対象の語彙: 全ルート×(メジャー/マイナー/7/m7) = 48テンプレート */
+const VOCAB=[];
+[['',[0,4,7]],['m',[0,3,7]],['7',[0,4,7,10]],['m7',[0,3,7,10]]].forEach(([suf,iv])=>{
+  for(let r=0;r<12;r++){
+    const pcs=iv.map(x=>(x+r)%12);
+    VOCAB.push({name:NOTE_NAMES_A[r]+suf,pcs,tpl:buildTemplate(pcs),
+      key:[...pcs].sort((a,b)=>a-b).join(',')});
+  }
+});
+function cosSim(vec,tpl){   /* tplは正規化済み */
+  let s=0,na=0;
+  for(let i=0;i<12;i++){s+=vec[i]*tpl[i];na+=vec[i]*vec[i];}
+  return s/(Math.sqrt(na)||1e-9);
+}
+/* 目標コードのスコアと、最強のライバルコードとの差(マージン)を返す */
+function analyzeChord(vec,targetPcs){
+  const tKey=[...targetPcs].sort((a,b)=>a-b).join(',');
+  const sim=cosSim(vec,buildTemplate(targetPcs));
+  let rival=null,rivalSim=-1;
+  VOCAB.forEach(v=>{
+    if(v.key===tKey)return;   /* 構成音が同一のテンプレは除外(Am7とC6等) */
+    const s=cosSim(vec,v.tpl);
+    if(s>rivalSim){rivalSim=s;rival=v.name;}
+  });
+  return {sim,margin:sim-rivalSim,rival,rivalSim};
+}
+
+/* ===== 押さえ方ライブラリ(f: 6弦→1弦のフレット, g: 指番号) ===== */
+const SHAPES={
+  'Am7':  {f:[-1,0,2,0,1,0],  g:[0,0,2,0,1,0]},
+  'Am':   {f:[-1,0,2,2,1,0],  g:[0,0,2,3,1,0]},
+  'F':    {f:[-1,-1,3,2,1,1], g:[0,0,3,2,1,1]},
+  'F6':   {f:[-1,-1,0,2,1,1], g:[0,0,0,2,1,1]},
+  'Fmaj7':{f:[-1,-1,3,2,1,0], g:[0,0,3,2,1,0]},
+  'Fm6':  {f:[-1,-1,0,1,1,1], g:[0,0,0,1,1,1]},
+  'G':    {f:[3,2,0,0,0,3],   g:[2,1,0,0,0,3]},
+  'G/B':  {f:[-1,2,0,0,0,3],  g:[0,1,0,0,0,3]},
+  'Gsus4':{f:[3,3,0,0,1,3],   g:[2,3,0,0,1,4]},
+  'C':    {f:[-1,3,2,0,1,0],  g:[0,3,2,0,1,0]},
+  'Dm7':  {f:[-1,-1,0,2,1,1], g:[0,0,0,2,1,1]},
+  'Em7':  {f:[0,2,2,0,3,0],   g:[0,1,2,0,3,0]},
+  'E7':   {f:[0,2,0,1,0,0],   g:[0,2,0,1,0,0]},
+  'Asus4':{f:[-1,0,2,2,3,0],  g:[0,0,1,2,3,0]},
+  'A':    {f:[-1,0,2,2,2,0],  g:[0,0,1,2,3,0]},
+  'D':    {f:[-1,-1,0,2,3,2], g:[0,0,0,1,3,2]},
+  'E':    {f:[0,2,2,1,0,0],   g:[0,2,3,1,0,0]},
+  'Em':   {f:[0,2,2,0,0,0],   g:[0,2,3,0,0,0]},
+  'Esus4':{f:[0,2,2,2,0,0],   g:[0,2,3,4,0,0]},
+  'Dm':   {f:[-1,-1,0,2,3,1], g:[0,0,0,2,3,1]},
+  'D7':   {f:[-1,-1,0,2,1,2], g:[0,0,0,2,1,3]},
+  'Dsus4':{f:[-1,-1,0,2,3,3], g:[0,0,0,1,3,4]},
+  'A7':   {f:[-1,0,2,0,2,0],  g:[0,0,2,0,3,0]},
+  'Am6':  {f:[-1,0,2,2,1,2],  g:[0,0,2,3,1,4]},
+  'B7':   {f:[-1,2,1,2,0,2],  g:[0,2,1,3,0,4]},
+  'Bm':   {f:[-1,2,0,4,3,2],  g:[0,1,0,4,3,2]},
+  'Bm7':  {f:[-1,2,0,2,0,2],  g:[0,1,0,2,0,3]},
+  'B':    {f:[-1,-1,4,4,4,2], g:[0,0,2,3,4,1]},
+  'F#m':  {f:[-1,-1,4,2,2,2], g:[0,0,3,1,1,1]},
+  'F#m7': {f:[-1,-1,2,2,2,2], g:[0,0,1,1,1,1]},
+  'F#7':  {f:[-1,-1,4,3,2,0], g:[0,0,3,2,1,0]},
+  'C#m':  {f:[-1,-1,2,1,2,0], g:[0,0,2,1,3,0]},
+  'C#m7': {f:[-1,4,2,1,0,0],  g:[0,3,2,1,0,0]},
+  'Bb':   {f:[-1,-1,3,3,3,1], g:[0,0,2,3,4,1]},
+  'C7':   {f:[-1,3,2,3,1,0],  g:[0,3,2,4,1,0]},
+  'G7':   {f:[3,2,0,0,0,1],   g:[3,2,0,0,0,1]},
+  'Cadd9':{f:[-1,3,2,0,3,0],  g:[0,2,1,0,3,0]},
+  'Cmaj7':{f:[-1,3,2,0,0,0],  g:[0,3,2,0,0,0]},
+  'Gadd9':{f:[3,2,0,2,0,3],   g:[2,1,0,3,0,4]},
+  'D#':   {f:[-1,-1,1,3,4,3], g:[0,0,1,2,4,3]},
+  'D#6':  {f:[-1,-1,1,3,1,3], g:[0,0,1,3,2,4]},
+  'Gm':   {f:[-1,-1,0,3,3,3], g:[0,0,0,1,2,3]},
+  'G/F':  {f:[1,-1,0,0,0,3],  g:[1,0,0,0,0,3]},
+  'C#m7-5':{f:[-1,4,2,0,0,0], g:[0,3,1,0,0,0]},
+};
+const SHAPE_ALIAS={'F/G':'F','Gadd9':'G','G6':'G'};
+/* 指ごとの固定色: 1=金(人差し指) 2=緑(中指) 3=青(薬指) 4=桃(小指) */
+const FINGER_COLORS=['','#f5d67b','#7fd6a4','#7fb8f0','#e08ac2'];
+function getShape(name){
+  return SHAPES[name]||SHAPES[SHAPE_ALIAS[name]]||SHAPES[name.split('/')[0]]||null;
+}
+function shapeSVG(name){
+  const c=getShape(name);
+  if(!c)return '';
+  const W=130,H=118,left=20,top=24,cols=5,rows=4;
+  const cw=(W-left*2)/cols, rh=(H-top-8)/rows;
+  let s=`<svg viewBox="0 0 ${W} ${H}" aria-hidden="true">`;
+  s+=`<rect x="${left}" y="${top-4}" width="${W-left*2}" height="4" rx="2" fill="var(--ink)"/>`;
+  for(let f=1;f<=rows;f++) s+=`<line x1="${left}" y1="${top+rh*f}" x2="${W-left}" y2="${top+rh*f}" stroke="var(--line)" stroke-width="1.3"/>`;
+  for(let st=0;st<6;st++){
+    const x=left+cw*st;
+    s+=`<line x1="${x}" y1="${top}" x2="${x}" y2="${top+rh*rows}" stroke="var(--ink-dim)" stroke-width="1"/>`;
+    const fr=c.f[st];
+    if(fr===-1) s+=`<text x="${x}" y="${top-9}" fill="var(--ink-dim)" font-size="10" text-anchor="middle">×</text>`;
+    else if(fr===0) s+=`<circle cx="${x}" cy="${top-12}" r="3.6" fill="none" stroke="var(--ink-dim)" stroke-width="1.4"/>`;
+    else{
+      const y=top+rh*fr-rh/2;
+      const col=FINGER_COLORS[c.g[st]]||'var(--wood)';
+      s+=`<circle cx="${x}" cy="${y}" r="7" fill="${col}"/>`;
+      if(c.g[st]) s+=`<text x="${x}" y="${y+3.6}" fill="#101726" font-size="10" font-weight="700" text-anchor="middle">${c.g[st]}</text>`;
+    }
+  }
+  return s+'</svg>';
+}
+
+/* ===== オーディオ ===== */
+let audioCtx=null;
+function ac(){ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); audioCtx.resume(); return audioCtx; }
+let clickBus=null;
+function clickBusNode(){
+  if(!clickBus){clickBus=ac().createGain();clickBus.connect(audioCtx.destination);}
+  return clickBus;
+}
+function stopClicks(){   /* 予約済みのガイドクリックを即時全停止 */
+  if(clickBus){try{clickBus.disconnect();}catch(e){}clickBus=null;}
+}
+function click(t,accent){
+  const c=ac(),o=c.createOscillator(),g=c.createGain();
+  o.frequency.value=accent?1320:880;
+  g.gain.setValueAtTime(accent?.4:.22,t);
+  g.gain.exponentialRampToValueAtTime(.001,t+.05);
+  o.connect(g).connect(clickBusNode());o.start(t);o.stop(t+.06);
+}
+
+/* ===== マイク & クロマ ===== */
+let micOn=false,stream=null,analyser=null,tunerAnalyser=null;
+const micToggle=document.getElementById('micToggle');
+const micState=document.getElementById('micState');
+const checkerMicBtn=document.getElementById('checkerMicBtn');
+function syncMicButtons(){
+  micToggle.textContent=micOn?'マイクOFFにする':'マイクON(判定あり)';
+  checkerMicBtn.textContent=micOn?'マイクをOFF':'マイクをON';
+}
+micToggle.addEventListener('click',async()=>{
+  if(micOn){
+    stream.getTracks().forEach(t=>t.stop());micOn=false;
+    syncMicButtons();
+    micState.textContent='マイクOFFのままでもプレイできます(判定なしの流し練習モード)';
+    return;
+  }
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+    const c=ac(),src=c.createMediaStreamSource(stream);
+    analyser=c.createAnalyser();analyser.fftSize=8192;analyser.smoothingTimeConstant=0.4;
+    src.connect(analyser);                              /* 判定系は増幅なしの素の入力 */
+    const boost=c.createGain();boost.gain.value=3.0;    /* 増幅はチューナー系統のみ */
+    src.connect(boost);
+    tunerAnalyser=c.createAnalyser();tunerAnalyser.fftSize=2048;
+    boost.connect(tunerAnalyser);
+    micOn=true;syncMicButtons();
+    micState.textContent='判定モードON。ギターの近くにマイクを置いてください';
+  }catch(e){
+    micState.innerHTML='<span class="warn">マイクを使えませんでした。この環境で動かない場合は、ファイルをダウンロードしてブラウザで直接開いてください。判定なしモードでは遊べます。</span>';
+  }
+});
+checkerMicBtn.addEventListener('click',()=>micToggle.click());
+function getCapo(){
+  const v=+document.getElementById('capoInput').value;
+  return isNaN(v)?0:Math.min(7,Math.max(0,v));
+}
+function chromaFrame(){
+  const N=analyser.frequencyBinCount,data=new Float32Array(N);
+  analyser.getFloatFrequencyData(data);
+  const binHz=audioCtx.sampleRate/analyser.fftSize;
+  const chroma=new Array(12).fill(0);let total=0;
+  const lo=Math.floor(70/binHz),hi=Math.min(N-1,Math.ceil(1100/binHz));
+  for(let i=lo;i<=hi;i++){
+    const db=data[i];if(db<-85)continue;
+    const mag=Math.pow(10,db/20),f=i*binHz;
+    const pc=(((Math.round(69+12*Math.log2(f/440)))%12)+12)%12;
+    chroma[pc]+=mag;total+=mag;
+  }
+  return {chroma,total,data,binHz};
+}
+
+/* ===== ゲーム本体 ===== */
+const setupEl=document.getElementById('setup'),gameEl=document.getElementById('game'),resultEl=document.getElementById('result'),checkerEl=document.getElementById('checker');
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const scoreDisp=document.getElementById('scoreDisp'),comboDisp=document.getElementById('comboDisp'),judgePop=document.getElementById('judgePop');
+let notes=[],bpm=70,beatsPer=4,startAt=0,rafId=null,running=false;
+let gEma=0,gWasQuiet=true,gLastOnset=-1,gSeenOnset=-1;
+let parts=[],prevNow=-99,ncCur='',ncNext='';
+const LANEY=()=>cv.height*0.32, LANEH=()=>cv.height*0.36;
+let score=0,combo=0,stats={perfect:0,good:0,miss:0};
+let lastSeq='',countBeats=4;
+
+document.querySelectorAll('.presets .chip').forEach(c=>c.addEventListener('click',()=>{
+  const p=SONG_PRESETS[c.dataset.key];
+  if(!p)return;
+  document.getElementById('seqInput').value=p.seq.trim();
+  if(p.bpm)document.getElementById('bpmInput').value=p.bpm;
+  if(p.capo!=null){
+    const ci=document.getElementById('capoInput');
+    ci.value=p.capo;
+    ci.dispatchEvent(new Event('input'));   /* チューナー・チェッカー表示を連動更新 */
+  }
+  document.querySelectorAll('.presets .chip').forEach(x=>x.classList.toggle('active',x===c));
+}));
+
+/* ユーザー採譜:星に願いを(flumpool) BPM137 / 4/4 */
+const HOSHI={
+  intro:`【イントロ】
+Am7 F G C:2 G/B:2
+Am7 F G C:2 G/B:2`,
+  aMelo:`【Aメロ】
+Am7 F6 G C:2 G:2
+Am7 F6 G C:2 G:2
+Am7 F6 G C:2 G:2
+Am7 F6 G C:2 G:2`,
+  bMelo:`【Bメロ】
+Dm7 F/G Em7 Am7 F
+G C E7:2 N.C.:2`,
+  sabi:`【サビ】
+Fmaj7 G Em7 Am7
+Dm7 Em7 Am7:2 G:2
+E7 Fmaj7 G Em7 Am7
+Dm7 Em7 Asus4:2 A:2 A`,
+  kansou:`【間奏】
+Am F G C:2 G/B:2
+Am F G C:2 G/B:2`,
+  cMelo:`【Cメロ】
+Fmaj7 G E7 Am7
+Dm7 Em7 Fmaj7 G
+E7 Am7 E7 C D Fmaj7 Gsus4 G -`,
+  ochi:`【落ちサビ】
+Fmaj7 Fm6 Em7 Am7
+Dm7 Em7 Fmaj7 E7`,
+  outro:`【アウトロ】
+Fmaj7 G Em7 Am7 Dm7 Em7 Asus4 A`,
+};
+/* ユーザー採譜:君に届け(flumpool) BPM144(ハーフタイム体感72) / 4/4 / カポ4 */
+const KIMI={
+  intro:`【イントロ】
+G G/F C D#6
+G G/F C D#
+G G/F C D#:2 D#/C:2
+G G/F C D#:2.5 F:1.5 N.C.:2`,
+  aMelo:`【Aメロ】
+G - Cadd9 -
+D - Em -
+G - Cadd9 -
+D - G D`,
+  bMelo:`【Bメロ】
+Em7 - Cadd9 Em7
+Em7 - Cadd9 -
+Dsus4 D Dsus4 D`,
+  sabi:`【サビ】
+G D Cmaj7 B7
+Em7 Cmaj7 D D:2 B7:2
+G D Cmaj7 B7
+Em7 - C#m7-5 -
+Am7 Bm7 Cmaj7 D:2 B7:2
+Em7 Fmaj7`,
+  kansou:`【間奏】
+G G/F C D#:2 D#/C:2
+G G/F C D#:2.5 F:1.5`,
+  aMelo2:`【2Aメロ】
+Gadd9 - Cadd9 -
+D - Em -
+Gadd9 - Cadd9 -
+D - Gadd9 D`,
+  bMelo2:`【2Bメロ】
+Em7 - Cadd9 -
+Em7 - Cadd9 -
+Dsus4 D Dsus4 D`,
+  sabi2:`【2サビ】
+G D Cmaj7 B7
+Em7 Cmaj7 D D:2 B7:2
+G D Cmaj7 B7
+Em7 - C#m7-5 -
+Am7 Bm7 Cmaj7 D:2 B7:2
+Em7 Fmaj7 -`,
+  cMelo:`【Cメロ】
+Cmaj7 D Bm7 Em7
+Am7 Bm7 Esus4 E`,
+  solo:`【ギターソロ】
+C - G -
+Gm - Dsus4 D`,
+  ochi:`【落ちサビ】
+G Dm Cmaj7 B7
+Em7:2*1 D:2*1 A7*1 Cmaj7*8 N.C.`,
+  lastSabi:`【ラスサビ】
+G D Cmaj7 B7
+Em7 - Cmaj7 D:2 B7:2
+G D Cmaj7 B7
+Em7 - C#m7-5 -
+Am7 Bm7 Cmaj7 D:2 B7:2
+Am7 Bm7 Cmaj7 D:2 B7:2`,
+  outro:`【アウトロ】
+Em7 - Cmaj7 -
+Em7 - Cmaj7 -
+Em7 - Cmaj7 -
+Em7 - Cmaj7*1`,
+};
+const SONG_PRESETS={
+  loop:{seq:'Am7 F G C:2 G/B:2 Am7 F G C:2 G/B:2',bpm:70,capo:2},
+  sabi:{seq:HOSHI.sabi,bpm:90,capo:2},
+  ab:{seq:[HOSHI.intro,HOSHI.aMelo,HOSHI.bMelo].join('\n'),bpm:90,capo:2},
+  c:{seq:[HOSHI.cMelo,HOSHI.ochi,HOSHI.sabi,HOSHI.outro].join('\n'),bpm:90,capo:2},
+  full:{seq:[HOSHI.intro,HOSHI.aMelo,HOSHI.bMelo,HOSHI.sabi,HOSHI.kansou,HOSHI.aMelo,HOSHI.bMelo,HOSHI.sabi,HOSHI.cMelo,HOSHI.ochi,HOSHI.sabi,HOSHI.outro].join('\n'),bpm:137,capo:2},
+  kimiSabi:{seq:KIMI.sabi,bpm:110,capo:4},
+  kimiAB:{seq:[KIMI.intro,KIMI.aMelo,KIMI.bMelo].join('\n'),bpm:110,capo:4},
+  kimiC:{seq:[KIMI.cMelo,KIMI.solo,KIMI.ochi,KIMI.lastSabi,KIMI.outro].join('\n'),bpm:110,capo:4},
+  kimiFull:{seq:[KIMI.intro,KIMI.aMelo,KIMI.bMelo,KIMI.sabi,KIMI.kansou,KIMI.aMelo2,KIMI.bMelo2,KIMI.sabi2,KIMI.cMelo,KIMI.solo,KIMI.ochi,KIMI.lastSabi,KIMI.outro].join('\n'),bpm:144,capo:4},
+};
+
+document.getElementById('startBtn').addEventListener('click',()=>{
+  const raw=document.getElementById('seqInput').value.trim();
+  if(!raw){return;}
+  bpm=Math.min(180,Math.max(40,+document.getElementById('bpmInput').value||70));
+  beatsPer=Math.min(8,Math.max(2,+document.getElementById('beatsInput').value||4));
+  lastSeq=raw;
+  buildNotes(raw);
+  if(!notes.length){micState.innerHTML='<span class="warn">読めるコードがありませんでした。例:D A Bm7 G</span>';return;}
+  startGame();
+});
+document.getElementById('quitBtn').addEventListener('click',endGame);
+document.getElementById('retryBtn').addEventListener('click',()=>{buildNotes(lastSeq);startGame();});
+document.getElementById('backBtn').addEventListener('click',()=>{
+  resultEl.style.display='none';setupEl.style.display='block';
+  checkerEl.style.display='block';document.getElementById('tuner').style.display='block';
+  document.getElementById('lesson').style.display='block';
+});
+
+function buildNotes(raw){
+  notes=[];
+  const toks=raw.split(/\s+/);
+  const beatSec=60/bpm;
+  let t=0;
+  toks.forEach(tok=>{
+    if(!tok||/^【.*】$/.test(tok))return;   /* セクションラベルは読み飛ばす */
+    if(tok==='-'){ const d=beatSec*beatsPer; if(notes.length) notes[notes.length-1].dur+=d; t+=d; return; }
+    /* "D:2" で拍数、"D*4" で回数(その区間で何回鳴らすか)。"D:2*2" の併用も可 */
+    let name=tok,beats=beatsPer,strums=1;
+    const si=name.lastIndexOf('*');
+    if(si>0){
+      const v=parseInt(name.slice(si+1));
+      if(!isNaN(v)&&v>0){strums=Math.min(16,v);name=name.slice(0,si);}
+    }
+    const ci=name.lastIndexOf(':');
+    if(ci>0){
+      const b=parseFloat(name.slice(ci+1));
+      if(!isNaN(b)&&b>0){ beats=Math.min(16,b); name=name.slice(0,ci); }
+    }
+    const dur=beatSec*beats;
+    let pcs=chordToPcs(name);
+    if(pcs){ const capo=getCapo(); pcs=pcs.map(p=>(p+capo)%12); }  /* カポ分だけ実音に移調 */
+    notes.push({name,pcs,time:t,dur,strums,onsetCount:0,state:'wait',acc:new Array(12).fill(0),accN:0,accAll:new Array(12).fill(0),accAllN:0});
+    t+=dur;
+  });
+}
+
+let lapsTotal=1,lapIdx=1,rampVal=0,runBaseBpm=90;
+function startGame(){
+  lapsTotal=Math.min(99,Math.max(1,parseInt(document.getElementById('loopInput').value)||1));
+  rampVal=Math.max(-20,Math.min(20,parseInt(document.getElementById('rampInput').value)||0));
+  lapIdx=1;runBaseBpm=bpm;
+  setupEl.style.display='none';resultEl.style.display='none';checkerEl.style.display='none';
+  document.getElementById('tuner').style.display='none';
+  document.getElementById('lesson').style.display='none';gameEl.style.display='block';
+  score=0;combo=0;stats={perfect:0,good:0,miss:0};
+  scoreDisp.textContent='0';comboDisp.textContent='0';
+  startLap();
+}
+function updateLapHud(){
+  document.getElementById('lapDisp').textContent=
+    lapsTotal>1?`LAP ${lapIdx}/${lapsTotal} ・ BPM ${bpm}`:`BPM ${bpm}`;
+}
+function startLap(){
+  judgePop.textContent='';judgePop.className='judge-pop';
+  buildNotes(lastSeq);   /* BPM変化を反映して毎周組み直す */
+  notes.forEach(n=>{n.state='wait';n.actAt=null;n.onsetCount=0;n.acc.fill(0);n.accN=0;n.accAll.fill(0);n.accAllN=0;});
+  gEma=0;gWasQuiet=true;gLastOnset=-1;gSeenOnset=-1;
+  parts=[];prevNow=-99;ncCur='';ncNext='';
+  updateLapHud();
+  const c=ac();
+  const beatSec=60/bpm;
+  const lead=countBeats*beatSec;           /* カウントイン4拍 */
+  startAt=c.currentTime+0.15+lead;
+  for(let i=0;i<countBeats;i++) click(c.currentTime+0.15+i*beatSec, i===0);
+  /* 各コード頭にクリック、複数回鳴らす区間はストローク位置にも小クリック */
+  notes.forEach(n=>{
+    click(startAt+n.time,true);
+    for(let k=1;k<n.strums;k++)click(startAt+n.time+k*n.dur/n.strums,false);
+  });
+  running=true;
+  loop();
+}
+
+const HITX=140;             /* 判定ライン位置 */
+const PXPS=120;             /* 1秒あたりのピクセル */
+function loop(){
+  if(!running)return;
+  const now=ac().currentTime-startAt;   /* 曲内時刻(カウントイン中は負) */
+
+  /* --- 判定 --- */
+  let liveChroma=null;
+  if(micOn&&analyser) liveChroma=chromaFrame();
+  const nowC=ac().currentTime;
+  if(liveChroma){
+    /* オンセット: 静→動の遷移、またはベースライン比の急増 */
+    const q=liveChroma.total<0.004;
+    if(!q&&(gWasQuiet||liveChroma.total>gEma*1.7)&&nowC-gLastOnset>0.15) gLastOnset=nowC;
+    gEma=gEma*0.9+liveChroma.total*0.1;
+    gWasQuiet=q;
+  }
+  const newOnset=(gLastOnset!==gSeenOnset&&gLastOnset>0);
+  if(newOnset)gSeenOnset=gLastOnset;
+  notes.forEach(n=>{
+    if(n.state!=='wait'&&n.state!=='active')return;
+    const s=n.time-0.15,e=n.time+n.dur-0.15;
+    if(now>=s&&now<e){
+      if(n.state!=='active'){n.state='active';n.actAt=now;}
+      if(newOnset)n.onsetCount++;
+      if(liveChroma&&n.pcs&&liveChroma.total>0.004){
+        const dt=nowC-gLastOnset;
+        /* オンセット直後(アタック後〜減衰前)の綺麗な窓を優先的に採点に使う */
+        if(gLastOnset>0&&dt>0.05&&dt<0.7){
+          for(let i=0;i<12;i++)n.acc[i]+=liveChroma.chroma[i];
+          n.accN++;
+        }
+        for(let i=0;i<12;i++)n.accAll[i]+=liveChroma.chroma[i];
+        n.accAllN++;
+      }
+    }else if(now>=e){
+      judgeNote(n);
+    }
+  });
+
+  updateNowChords(now);
+  animMove();
+  draw(now);
+  if(now>notes[notes.length-1].time+notes[notes.length-1].dur+0.4){finish();return;}
+  rafId=requestAnimationFrame(loop);
+}
+
+/* ===== 指の動きミニアニメーション(共通部品) ===== */
+const FINGER_NAMES=['','人差し指','中指','薬指','小指'];
+const FINGER_CNAMES=['','金','緑','青','桃'];
+/* コードAからBへの各指の移動リスト(座標+弦フレット情報つき) */
+function fingerMoveItems(aName,bName){
+  const a=getShape(aName),b=getShape(bName);
+  if(!a||!b)return null;
+  const W=130,H=118,left=20,top=24,cols=5,rows=4;
+  const cw=(W-left*2)/cols,rh=(H-top-8)/rows;
+  const pos=(st,fr)=>({x:left+cw*st,y:top+rh*fr-rh/2});
+  const dotsOf=s=>{
+    const o=[];
+    for(let st=0;st<6;st++){const f=s.g[st],fr=s.f[st];if(f>0&&fr>0)o.push({f,st,fr,...pos(st,fr)});}
+    return o;
+  };
+  const A=dotsOf(a),B=dotsOf(b);
+  const items=[];
+  for(let f=1;f<=4;f++){
+    const la=A.filter(d=>d.f===f),lb=B.filter(d=>d.f===f);
+    const n=Math.max(la.length,lb.length);
+    for(let i=0;i<n;i++){
+      const s0=la[i]||la[la.length-1],s1=lb[i]||lb[lb.length-1];
+      if(s0&&s1)items.push({f,mode:'move',x0:s0.x,y0:s0.y,x1:s1.x,y1:s1.y,from:{st:s0.st,fr:s0.fr},to:{st:s1.st,fr:s1.fr}});
+      else if(s0)items.push({f,mode:'out',x0:s0.x,y0:s0.y,x1:s0.x,y1:s0.y-14,from:{st:s0.st,fr:s0.fr}});
+      else if(s1)items.push({f,mode:'in',x0:s1.x,y0:s1.y-14,x1:s1.x,y1:s1.y,to:{st:s1.st,fr:s1.fr}});
+    }
+  }
+  return items;
+}
+/* 移動の日本語説明 */
+function describeMove(it){
+  const nm=`${FINGER_NAMES[it.f]}(${FINGER_CNAMES[it.f]})`;
+  if(it.mode==='out')return `${nm}を離す`;
+  if(it.mode==='in')return `${nm}を ${6-it.to.st}弦${it.to.fr}フレットに置く`;
+  if(it.from.st===it.to.st&&it.from.fr===it.to.fr)return `${nm}はそのまま`;
+  return `${nm}を ${6-it.from.st}弦${it.from.fr}F → ${6-it.to.st}弦${it.to.fr}F へ`;
+}
+/* コンテナに指板+アニメ用ドットのSVGを構築 */
+function renderMoveSVG(box,items){
+  const W=130,H=118,left=20,top=24,cols=5,rows=4;
+  const cw=(W-left*2)/cols,rh=(H-top-8)/rows;
+  let svg=`<svg viewBox="0 0 ${W} ${H}" aria-hidden="true">`;
+  svg+=`<rect x="${left}" y="${top-4}" width="${W-left*2}" height="4" rx="2" fill="var(--ink)"/>`;
+  for(let fr=1;fr<=rows;fr++)svg+=`<line x1="${left}" y1="${top+rh*fr}" x2="${W-left}" y2="${top+rh*fr}" stroke="var(--line)" stroke-width="1.3"/>`;
+  for(let st=0;st<6;st++)svg+=`<line x1="${left+cw*st}" y1="${top}" x2="${left+cw*st}" y2="${top+rh*rows}" stroke="var(--ink-dim)" stroke-width="1"/>`;
+  items.forEach((it,i)=>{
+    svg+=`<g class="mvdot" opacity="0"><circle r="7" fill="${FINGER_COLORS[it.f]}"/><text y="3.6" fill="#101726" font-size="10" font-weight="700" text-anchor="middle">${it.f}</text></g>`;
+  });
+  svg+='</svg>';
+  box.innerHTML=svg;
+  return {items,els:[...box.querySelectorAll('.mvdot')]};
+}
+/* アニメーション1フレーム分の適用(2.4秒ループ) */
+function tickMoveAnim(anim){
+  if(!anim)return;
+  const cyc=2.4,t=(performance.now()/1000)%cyc;
+  const ease=x=>x<=0?0:x>=1?1:x*x*(3-2*x);
+  let p;
+  if(t<0.7)p=0;
+  else if(t<1.5)p=ease((t-0.7)/0.8);
+  else p=1;
+  const fade=t>cyc-0.25?(cyc-t)/0.25:1;
+  anim.items.forEach((it,i)=>{
+    const el=anim.els[i];if(!el)return;
+    const x=it.x0+(it.x1-it.x0)*p, y=it.y0+(it.y1-it.y0)*p;
+    let op=1;
+    if(it.mode==='out')op=1-p;
+    if(it.mode==='in')op=p;
+    el.setAttribute('transform',`translate(${x.toFixed(1)},${y.toFixed(1)})`);
+    el.setAttribute('opacity',(op*fade).toFixed(2));
+  });
+}
+
+function updateNowChords(now){
+  let ci=-1;
+  for(let i=0;i<notes.length;i++){ if(notes[i].time-0.15<=now) ci=i; else break; }
+  const cur=ci<0?notes[0]:notes[ci];                 /* カウントイン中は最初のコードを予告 */
+  const nxt=ci<0?notes[1]:notes[ci+1];
+  const cn=cur?cur.name:'—', nn=nxt?nxt.name:'(おわり)';
+  if(cn!==ncCur){
+    ncCur=cn;
+    document.getElementById('ncCurName').textContent=cn;
+    document.getElementById('ncCurSvg').innerHTML=shapeSVG(cn);
+  }
+  if(nn!==ncNext){
+    ncNext=nn;
+    document.getElementById('ncNextName').textContent=nn;
+    document.getElementById('ncNextSvg').innerHTML=nxt?shapeSVG(nn):'';
+    buildMoveAnim(cn,nxt?nn:null);
+  }
+}
+
+let moveAnim=null;
+function buildMoveAnim(curName,nextName){
+  const box=document.getElementById('ncMoveSvg');
+  const items=nextName?fingerMoveItems(curName,nextName):null;
+  if(!items){box.innerHTML='';moveAnim=null;return;}
+  moveAnim=renderMoveSVG(box,items);
+}
+function animMove(){tickMoveAnim(moveAnim);}
+
+function burst(color,n){
+  const y=LANEY()+LANEH()/2;
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2, sp=90+Math.random()*220;
+    parts.push({x:HITX,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-70,
+      age:0,life:0.55+Math.random()*0.4,size:1.6+Math.random()*2.4,color});
+  }
+}
+
+function judgeNote(n){
+  if(n.state==='judged')return;
+  n.state='judged';
+  if(!micOn||!n.pcs){ n.result='free'; return; }   /* 判定なしモード / N.C.等 */
+  /* オンセット窓のデータを優先、なければ全体(ロングトーンの持続音対応) */
+  const useN=n.accN>2?n.accN:n.accAllN;
+  const useA=n.accN>2?n.acc:n.accAll;
+  let r;
+  if(!useN)r='miss';
+  else{
+    const vec=useA.map(x=>x/useN);
+    const {sim,margin}=analyzeChord(vec,n.pcs);
+    if(sim>0.72&&margin>-0.05)r='perfect';       /* 目標が候補中ほぼ1位 */
+    else if(sim>0.55)r='good';
+    else r='miss';
+    /* *n指定の区間: 鳴らした回数が半分未満ならPERFECTはGOODに降格 */
+    if(r==='perfect'&&n.strums>1&&n.onsetCount<Math.ceil(n.strums*0.5))r='good';
+  }
+  n.result=r;stats[r]++;
+  if(r==='miss'){combo=0;}
+  else{combo++;score+=r==='perfect'?300+combo*10:100+combo*5;}
+  scoreDisp.textContent=score;
+  comboDisp.textContent=combo;
+  if(combo>0){comboDisp.classList.remove('pop');void comboDisp.offsetWidth;comboDisp.classList.add('pop');}
+  judgePop.className='judge-pop '+r;
+  judgePop.textContent=r==='perfect'?'PERFECT ★':r==='good'?'GOOD':'MISS';
+  judgePop.classList.remove('pop');void judgePop.offsetWidth;judgePop.classList.add('pop');
+  if(r==='perfect')burst('#f5d67b',18);
+  else if(r==='good')burst('#7fd6a4',10);
+}
+
+function draw(now){
+  const W=cv.width,H=cv.height;
+  const dt=Math.min(0.1,Math.max(0,now-prevNow));prevNow=now;
+  ctx.clearRect(0,0,W,H);
+  const laneY=LANEY(),laneH=LANEH();
+  const beatSec=60/bpm;
+  const beatPh=((now%beatSec)+beatSec)%beatSec/beatSec;   /* 拍の位相0〜1 */
+
+  /* 星空(2層パララックス) */
+  for(let i=0;i<26;i++){
+    const spd=i%2?9:22, sz=i%2?1.2:1.9;
+    const sx=(i*97+now*spd)%(W+20)-10;
+    const sy=(i*53%Math.floor(H*0.26))+6;
+    const tw=0.35+0.4*Math.sin(now*2.4+i);
+    ctx.fillStyle=`rgba(245,214,123,${tw})`;
+    ctx.fillRect(W-sx,sy,sz,sz);
+  }
+
+  /* レーン */
+  ctx.fillStyle='rgba(255,255,255,.03)';
+  ctx.fillRect(0,laneY,W,laneH);
+
+  /* 判定ライン(拍に合わせて脈動、拍頭で光る) */
+  const pulse=1-Math.min(1,beatPh*3);
+  ctx.strokeStyle=`rgba(245,214,123,${0.55+0.45*pulse})`;
+  ctx.lineWidth=3+3*pulse;
+  ctx.beginPath();ctx.moveTo(HITX,laneY-14);ctx.lineTo(HITX,laneY+laneH+14);ctx.stroke();
+  if(pulse>0.02){
+    ctx.strokeStyle=`rgba(245,214,123,${0.25*pulse})`;ctx.lineWidth=10*pulse+4;
+    ctx.beginPath();ctx.moveTo(HITX,laneY-14);ctx.lineTo(HITX,laneY+laneH+14);ctx.stroke();
+  }
+  ctx.fillStyle='#f5d67b';ctx.font='11px sans-serif';ctx.textAlign='center';
+  ctx.fillText('ここでジャン♪',HITX,laneY-22);
+
+  /* カウントイン */
+  if(now<0){
+    const beat=Math.ceil(-now/beatSec);
+    const frac=1-((-now/beatSec)%1);
+    const sc=1+0.5*(1-frac);
+    ctx.save();
+    ctx.translate(W/2,H*0.17);ctx.scale(sc,sc);
+    ctx.fillStyle=`rgba(232,236,245,${0.4+0.6*frac})`;
+    ctx.font='700 46px "Shippori Mincho",serif';
+    ctx.fillText(beat,0,0);
+    ctx.restore();
+  }else if(now<0.5){
+    ctx.fillStyle=`rgba(245,214,123,${1-now*2})`;
+    ctx.font='700 34px "Shippori Mincho",serif';
+    ctx.fillText('スタート!',W/2,H*0.17);
+  }
+
+  /* ノーツ */
+  notes.forEach(n=>{
+    const x=HITX+(n.time-now)*PXPS;
+    const w=n.dur*PXPS-8;
+    if(x+w<-40||x>W+40)return;
+    let col='#1e2a42',border='#2c3a58',txt='#e8ecf5';
+    if(n.state==='active'){col='#3a2f22';border='#c98a5b';}
+    if(n.state==='judged'){
+      if(n.result==='perfect'){col='#2c2a17';border='#f5d67b';txt='#f5d67b';}
+      else if(n.result==='good'){col='#18301f';border='#7fd6a4';txt='#7fd6a4';}
+      else if(n.result==='miss'){col='#33191c';border='#d97b7b';txt='#d97b7b';}
+      else{col='#182236';border='#2c3a58';txt='#9aa7c0';}
+    }
+    const bw=Math.max(w,54);
+    ctx.fillStyle=col;ctx.strokeStyle=border;ctx.lineWidth=2;
+    roundRect(ctx,x,laneY+10,bw,laneH-20,12);
+    ctx.fill();ctx.stroke();
+    /* アクティブノーツ: 残り時間バーと入場リング */
+    if(n.state==='active'){
+      const prog=Math.min(1,(now-(n.time-0.15))/n.dur);
+      ctx.fillStyle='rgba(201,138,91,.55)';
+      ctx.fillRect(x+3,laneY+laneH-16,(bw-6)*(1-prog),3);
+      const age=now-(n.actAt??now);
+      if(age<0.3){
+        const rr=14+age*140, al=1-age/0.3;
+        ctx.strokeStyle=`rgba(245,214,123,${0.5*al})`;ctx.lineWidth=2.5;
+        ctx.beginPath();ctx.arc(HITX,laneY+laneH/2,rr,0,Math.PI*2);ctx.stroke();
+      }
+    }
+    /* ストローク位置マーカー(*n指定の区間) */
+    if(n.strums>1){
+      for(let k=0;k<n.strums;k++){
+        const tx=x+(k*n.dur/n.strums)*PXPS+8;
+        if(tx<x+2||tx>x+bw-4)continue;
+        const tTime=n.time+k*n.dur/n.strums;
+        const passed=now>tTime-0.075;
+        const hit=passed&&n.onsetCount>k;
+        ctx.fillStyle=hit?'#f5d67b':(passed?'rgba(217,123,123,.8)':'rgba(154,167,192,.55)');
+        ctx.save();ctx.translate(tx,laneY+20);ctx.rotate(Math.PI/4);
+        ctx.fillRect(-3,-3,6,6);ctx.restore();
+      }
+    }
+    ctx.fillStyle=txt;ctx.font='700 26px "Shippori Mincho",serif';
+    ctx.fillText(n.name,x+bw/2,laneY+laneH/2+9);
+  });
+
+  /* パーティクル(判定エフェクト) */
+  parts=parts.filter(p=>p.age<p.life);
+  parts.forEach(p=>{
+    p.age+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=340*dt;
+    const al=1-p.age/p.life;
+    ctx.fillStyle=p.color;ctx.globalAlpha=al;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.size*al+0.5,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=al*0.7;
+    ctx.fillRect(p.x-p.size*2.2*al,p.y-0.5,p.size*4.4*al,1);
+    ctx.fillRect(p.x-0.5,p.y-p.size*2.2*al,1,p.size*4.4*al);
+    ctx.globalAlpha=1;
+  });
+
+  /* 星の地平線 */
+  ctx.fillStyle='rgba(245,214,123,.5)';
+  for(let i=0;i<14;i++){
+    const sx=(i*61+now*24)%W;
+    ctx.fillRect(W-sx,H-16-(i%4)*5,2,2);
+  }
+}
+function roundRect(c,x,y,w,h,r){
+  c.beginPath();
+  c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);
+  c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();
+}
+
+function finish(){
+  running=false;cancelAnimationFrame(rafId);
+  /* まだ周回が残っていれば、BPMを変えて次の周へ */
+  if(lapIdx<lapsTotal){
+    lapIdx++;
+    bpm=Math.min(200,Math.max(40,bpm+rampVal));
+    document.getElementById('bpmInput').value=bpm;
+    startLap();
+    return;
+  }
+  gameEl.style.display='none';resultEl.style.display='block';
+  document.getElementById('rPerfect').textContent=stats.perfect;
+  document.getElementById('rGood').textContent=stats.good;
+  document.getElementById('rMiss').textContent=stats.miss;
+  const total=stats.perfect+stats.good+stats.miss;
+  const rank=document.getElementById('rankDisp'),sub=document.getElementById('rankSub');
+  const lapNote=lapsTotal>1?`${lapsTotal}周おつかれさま(BPM ${runBaseBpm}→${bpm})。`:'';
+  if(!micOn||total===0){rank.textContent='♪';sub.textContent=lapNote+'流し練習おつかれさま。マイクONで判定付きになります';}
+  else{
+    const acc=(stats.perfect*1+stats.good*0.6)/total;
+    rank.textContent=acc>0.9?'S':acc>0.75?'A':acc>0.55?'B':acc>0.35?'C':'D';
+    sub.textContent=lapNote+(acc>0.75?'バンドで通用するレベル!':acc>0.5?'あと少し。MISSのコードを個別練習しよう':'テンポを落として、まずコードチェンジだけ練習しよう');
+  }
+  /* 次回リトライは開始時のBPMから */
+  bpm=runBaseBpm;
+  document.getElementById('bpmInput').value=runBaseBpm;
+  if(window.LESSON)LESSON.onGameResult({acc:(micOn&&total>0)?(stats.perfect*1+stats.good*0.6)/total:null});
+}
+function endGame(){
+  running=false;cancelAnimationFrame(rafId);
+  stopClicks();
+  gameEl.style.display='none';setupEl.style.display='block';
+  checkerEl.style.display='block';document.getElementById('tuner').style.display='block';
+  document.getElementById('lesson').style.display='block';
+}
+
+/* ===== 機能の個別ON/OFF ===== */
+const FEATURES={tuner:true,checker:true,lesson:true};
+[['tuner','tunerToggle','tunerBody'],['checker','checkerToggle','checkerBody'],['lesson','lessonToggle','lessonBody']].forEach(([key,btnId,bodyId])=>{
+  const btn=document.getElementById(btnId),body=document.getElementById(bodyId);
+  btn.addEventListener('click',()=>{
+    FEATURES[key]=!FEATURES[key];
+    const on=FEATURES[key];
+    btn.textContent=on?'ON':'OFF';
+    btn.classList.toggle('off',!on);
+    btn.setAttribute('aria-pressed',on);
+    body.style.display=on?'block':'none';
+    document.getElementById(key).classList.toggle('disabled',!on);
+  });
+});
+
+/* ===== チューナー(自己相関ピッチ検出) ===== */
+(function(){
+  const NOTE_NAMES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  /* 開放弦のMIDIノート(6弦→1弦): E2 A2 D3 G3 B3 E4 */
+  const OPEN_MIDI=[40,45,50,55,59,64];
+  const tNote=document.getElementById('tNote');
+  const tCents=document.getElementById('tCents');
+  const tHint=document.getElementById('tHint');
+  const needle=document.getElementById('needle');
+  const noteBox=document.querySelector('.tuner-note');
+  const stringRow=document.getElementById('stringRow');
+
+  function renderStrings(){
+    const capo=getCapo();
+    stringRow.innerHTML=OPEN_MIDI.map((m,i)=>{
+      const midi=m+capo;
+      return `<div class="string" data-midi="${midi}">
+        <div class="s-no">${6-i}弦</div>
+        <div class="s-note">${NOTE_NAMES[midi%12]}</div></div>`;
+    }).join('');
+  }
+  renderStrings();
+  document.getElementById('capoInput').addEventListener('input',renderStrings);
+
+  /* 自己相関で基本周波数を推定(±1〜2セント精度) */
+  const buf=new Float32Array(2048);
+  function detectPitch(sr){
+    tunerAnalyser.getFloatTimeDomainData(buf);
+    const N=buf.length;
+    let rms=0;for(let i=0;i<N;i++)rms+=buf[i]*buf[i];
+    rms=Math.sqrt(rms/N);
+    if(rms<0.006)return -1;               /* 無音ゲート */
+    /* ACF(65〜700Hzに対応するラグのみ計算) */
+    const minLag=Math.floor(sr/700),maxLag=Math.min(N-1,Math.ceil(sr/65));
+    let bestLag=-1,bestVal=0,norm=0;
+    for(let i=0;i<N;i++)norm+=buf[i]*buf[i];
+    const c=new Float32Array(maxLag+1);
+    for(let lag=minLag;lag<=maxLag;lag++){
+      let s=0;
+      for(let i=0;i<N-lag;i++)s+=buf[i]*buf[i+lag];
+      c[lag]=s;
+      if(s>bestVal){bestVal=s;bestLag=lag;}
+    }
+    if(bestLag<0||bestVal/norm<0.3)return -1;   /* 相関が弱ければ不採用 */
+    /* 倍音誤検出対策: 半分のラグ(1オクターブ上)が十分強ければそちらを採用 */
+    const half=Math.round(bestLag/2);
+    if(half>=minLag&&c[half]>bestVal*0.85){bestLag=half;}
+    /* 放物線補間でサブサンプル精度に */
+    let T=bestLag;
+    if(bestLag>minLag&&bestLag<maxLag){
+      const x1=c[bestLag-1],x2=c[bestLag],x3=c[bestLag+1];
+      const a=(x1+x3-2*x2)/2,b=(x3-x1)/2;
+      if(a!==0)T=bestLag-b/(2*a);
+    }
+    return sr/T;
+  }
+
+  let emaCents=0,emaMidi=-1,hold=0;
+  function tick(){
+    if(!FEATURES.tuner){requestAnimationFrame(tick);return;}   /* OFF中は処理しない */
+    if(micOn&&tunerAnalyser&&!running){
+      const f=detectPitch(audioCtx.sampleRate);
+      if(f>0){
+        const midiF=69+12*Math.log2(f/440);
+        const midi=Math.round(midiF);
+        let cents=(midiF-midi)*100;
+        if(midi!==emaMidi){emaMidi=midi;emaCents=cents;}
+        else emaCents=emaCents*0.6+cents*0.4;
+        cents=emaCents;
+        tNote.textContent=NOTE_NAMES[((midi%12)+12)%12];
+        tCents.textContent=(cents>=0?'+':'−')+Math.abs(cents).toFixed(0)+'¢';
+        const inTune=Math.abs(cents)<=5;
+        needle.style.left=(50+Math.max(-50,Math.min(50,cents)))+'%';
+        needle.classList.toggle('in-tune',inTune);
+        noteBox.classList.toggle('in-tune',inTune);
+        tHint.textContent=inTune?'OK!':(cents>0?'高い:カポの締めすぎ/位置を確認':'低い:カポなしで合わせ直し');
+        stringRow.querySelectorAll('.string').forEach(el=>
+          el.classList.toggle('hit',+el.dataset.midi===midi&&inTune));
+        hold=12;
+      }else if(hold>0){hold--;}
+      else{
+        tNote.textContent='—';tCents.textContent='±0¢';
+        needle.style.left='50%';needle.classList.remove('in-tune');
+        noteBox.classList.remove('in-tune');
+        tHint.textContent='弦を1本鳴らして';
+        stringRow.querySelectorAll('.string').forEach(el=>el.classList.remove('hit'));
+      }
+    }else if(!micOn){
+      tHint.textContent='マイクON後、弦を鳴らして';
+    }
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+/* ===== コードチェッカー(カポ2・Cキーの形) ===== */
+(function(){
+  const NOTE_NAMES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  /* frets: 6弦→1弦 (-1=×, 0=開放), fingers: 同順 */
+  const CARD_SETS={
+    hoshi:[
+      {name:'Am7',  tag:'主役',   memo:'この曲のホーム。Amもこれで代用OK'},
+      {name:'Fmaj7',tag:'簡単F',  memo:'Fより簡単。FやF/Gが来てもこれでOK'},
+      {name:'C',    tag:'基本',   memo:'5弦3フレットから斜めに並べる'},
+      {name:'G',    tag:'基本',   memo:'G/BやGsus4もまずはこれで'},
+      {name:'Dm7',  tag:'2本+セーハ',memo:'F6と構成音が同じ。F6もこの形でOK'},
+      {name:'Em7',  tag:'基本',   memo:'開放弦が多くて鳴らしやすい'},
+      {name:'E7',   tag:'基本',   memo:'サビ前の切なさ担当'},
+      {name:'A',    tag:'基本',   memo:'サビ終わりで登場'},
+      {name:'Asus4',tag:'基本',   memo:'A の前にワンクッション'},
+      {name:'Fm6',  tag:'落ちサビ',memo:'1〜3弦を1フレットでセーハ。慣れるまでFmaj7代用可'},
+    ],
+    kimi:[
+      {name:'G',    tag:'主役',   memo:'この曲のホーム。まずはここから'},
+      {name:'G/F',  tag:'イントロ',memo:'Gの6弦を1フレットに。慣れるまでGで代用可'},
+      {name:'C',    tag:'イントロ',memo:'5弦3フレットから斜めに並べる'},
+      {name:'D#',   tag:'イントロ',memo:'Dの形を1フレット上げた形。D#6でも代用可'},
+      {name:'D#6',  tag:'イントロ',memo:'イントロの締め。D#/Cもこの形でOK'},
+      {name:'Cadd9',tag:'Aメロ',  memo:'Gから薬指・小指を残して移れる相棒'},
+      {name:'Cmaj7',tag:'サビ',   memo:'2本指で鳴る。サビの浮遊感担当'},
+      {name:'D',    tag:'基本',   memo:'三角形に並べる。Dsus4は小指を足すだけ'},
+      {name:'Dsus4',tag:'Bメロ',  memo:'D⇄Dsus4の揺れがBメロ後半のキモ'},
+      {name:'Em7',  tag:'基本',   memo:'開放弦が多くて鳴らしやすい'},
+      {name:'Am7',  tag:'基本',   memo:'サビ後半で登場'},
+      {name:'Bm7',  tag:'2本指',  memo:'バレー不要のx20202フォーム'},
+      {name:'B7',   tag:'サビ',   memo:'サビの切なさ担当。指は多いが開放弦頼りで意外と楽'},
+      {name:'C#m7-5',tag:'サビ',  memo:'名前は強いが x42000 のほぼ開放コード'},
+      {name:'Fmaj7',tag:'基本',   memo:'Fが来たらまずこれで'},
+    ],
+  };
+  let CARDS=[];
+  let target='G';
+
+  const grid=document.getElementById('chordGrid');
+  const verdict=document.getElementById('verdict');
+  const vMark=verdict.querySelector('.v-mark');
+  const vText=verdict.querySelector('.v-text');
+  const chromaEl=document.getElementById('chroma');
+
+  function chordSVG(c){
+    const W=140,H=140,left=22,top=30,cols=5,rows=4;
+    const cw=(W-left*2)/cols, rh=(H-top-12)/rows;
+    let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${c.name}コードの押さえ方">`;
+    s+=`<rect x="${left}" y="${top-4}" width="${W-left*2}" height="4" rx="2" fill="var(--ink)"/>`;
+    for(let f=1;f<=rows;f++) s+=`<line x1="${left}" y1="${top+rh*f}" x2="${W-left}" y2="${top+rh*f}" stroke="var(--line)" stroke-width="1.5"/>`;
+    for(let st=0;st<6;st++){
+      const x=left+cw*st;
+      s+=`<line x1="${x}" y1="${top}" x2="${x}" y2="${top+rh*rows}" stroke="var(--ink-dim)" stroke-width="1"/>`;
+      const fr=c.frets[st];
+      if(fr===-1) s+=`<text x="${x}" y="${top-10}" fill="var(--ink-dim)" font-size="11" text-anchor="middle">×</text>`;
+      else if(fr===0) s+=`<circle cx="${x}" cy="${top-14}" r="4" fill="none" stroke="var(--ink-dim)" stroke-width="1.5"/>`;
+      else{
+        const y=top+rh*fr-rh/2;
+        const col=FINGER_COLORS[c.fingers[st]]||'var(--wood)';
+        s+=`<circle cx="${x}" cy="${y}" r="7.5" fill="${col}"/>`;
+        if(c.fingers[st]) s+=`<text x="${x}" y="${y+3.8}" fill="#101726" font-size="10.5" font-weight="700" text-anchor="middle">${c.fingers[st]}</text>`;
+      }
+    }
+    return s+'</svg>';
+  }
+
+  function buildCards(){
+    const set=CARD_SETS[window.SONG_MODE||'kimi'];
+    CARDS=set.map(c=>({...c,frets:SHAPES[c.name].f,fingers:SHAPES[c.name].g}));
+    target=CARDS[0].name;
+    grid.innerHTML=CARDS.map(c=>
+      `<div class="chord${c.name===target?' selected':''}" data-n="${c.name}" role="button" tabindex="0">
+         <h3>${c.name}</h3><span class="tag">${c.tag}</span>${chordSVG(c)}<p class="memo">${c.memo}</p></div>`).join('');
+    grid.querySelectorAll('.chord').forEach(el=>{
+      const pick=()=>{
+        target=el.dataset.n;
+        grid.querySelectorAll('.chord').forEach(x=>x.classList.toggle('selected',x===el));
+        paintBars();renderStrPanel();
+        hasVerdict=false;capturing=false;
+        setVerdict('','…',`${target} を選択中。ジャンと鳴らしてみて`);
+      };
+      el.addEventListener('click',pick);
+      el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick();}});
+    });
+    paintBars();renderStrPanel();
+  }
+  window.__checkerRebuild=buildCards;
+
+  chromaEl.innerHTML=NOTE_NAMES.map(n=>`<div class="bar"><span>${n}</span></div>`).join('');
+  const bars=[...chromaEl.querySelectorAll('.bar')];
+
+  /* --- 弦ごとの音と検出 --- */
+  const OPEN_MIDI=[40,45,50,55,59,64];   /* 6弦→1弦の開放弦MIDI */
+  const strPanel=document.getElementById('strPanel');
+  let strPeaks=new Array(6).fill(0),strNb=new Array(6).fill(0),strFrames=0,wasQuiet=true;
+
+  function currentCard(){return CARDS.find(c=>c.name===target);}
+  function stringMidis(){
+    const c=currentCard(),capo=getCapo();
+    return c.frets.map((f,i)=>f<0?null:OPEN_MIDI[i]+f+capo);   /* 実音のMIDI */
+  }
+  function renderStrPanel(){
+    const midis=stringMidis();
+    strPanel.innerHTML=midis.map((m,i)=>
+      `<div class="str-cell${m===null?' mute':''}" data-i="${i}">
+        <div class="c-no">${6-i}弦</div>
+        <div class="c-note">${m===null?'×':NOTE_NAMES[m%12]}</div></div>`).join('');
+    strPeaks.fill(0);strNb.fill(0);
+  }
+  /* FFTから特定のMIDIノートの強さを測る(基音±40セント、弱ければ2倍音も見る) */
+  function noteStrength(data,binHz,midi){
+    const f=440*Math.pow(2,(midi-69)/12);
+    const win=(freq)=>{
+      const lo=Math.max(1,Math.floor(freq*0.977/binHz)),hi=Math.ceil(freq*1.023/binHz);
+      let mx=0;
+      for(let b=lo;b<=hi&&b<data.length;b++){const db=data[b];if(db>-95)mx=Math.max(mx,Math.pow(10,db/20));}
+      return mx;
+    };
+    return Math.max(win(f),win(f*2)*0.7);
+  }
+  /* 鳴らなかった弦: パネルの表示状態をそのまま読む(メッセージと画面の食い違い防止) */
+  function failedStrings(){
+    const midis=stringMidis();
+    const out=[];
+    [...strPanel.children].forEach((c,i)=>{
+      if(c.classList.contains('off')&&midis[i]!==null)
+        out.push({no:6-i,note:NOTE_NAMES[midis[i]%12]});
+    });
+    return out;
+  }
+  /* 「◯◯の形に近い」の原因説明: 目標コードに必要な音のうち弱かったものを弦に逆算 */
+  function explainRival(rivalActual,vec){
+    const tp=targetPcs();
+    const mv=Math.max(...vec,1e-9);
+    const weak=tp.filter(p=>vec[p]<mv*0.22);   /* 目標の構成音のうち弱い音 */
+    if(!weak.length)return '';
+    const strs=[];
+    stringMidis().forEach((m,i)=>{
+      if(m!==null&&weak.includes(m%12))strs.push(`${6-i}弦(${NOTE_NAMES[m%12]})`);
+    });
+    if(!strs.length)return '';
+    return `響きが ${rivalToShape(rivalActual)} に近づいてます=${target} に必要な ${strs.join('・')} の音が弱いせいです。その弦を確認`;
+  }
+  /* 全弦鳴ってはいるがバランスが悪い時: 弱い弦を名指し */
+  function weakHint(vec){
+    const tp=targetPcs();
+    const mv=Math.max(...vec,1e-9);
+    const weak=tp.filter(p=>vec[p]<mv*0.3);
+    if(!weak.length)return '';
+    const strs=[];
+    stringMidis().forEach((m,i)=>{
+      if(m!==null&&weak.includes(m%12))strs.push(`${6-i}弦(${NOTE_NAMES[m%12]})`);
+    });
+    if(!strs.length)return '';
+    return strs.join('・')+' の音がまだ弱め。その弦がはっきり鳴るように';
+  }
+  /* 原因の診断: 欠け弦 → 半音ズレ → 余計な音 の順に具体化を試みる */
+  function diagnose(vec){
+    const fails=failedStrings();
+    if(fails.length>0&&fails.length<=4)
+      return fails.map(f=>`${f.no}弦(${f.note})`).join('・')+' が鳴ってません';
+    /* 半音ズレ: 期待音は弱いのに半音隣が強い弦 */
+    const maxPeak=Math.max(...strPeaks,1e-9);
+    if(maxPeak>1e-5){
+      const off=[];
+      stringMidis().forEach((m,i)=>{
+        if(m===null)return;
+        if(strPeaks[i]<=maxPeak*0.12&&strNb[i]>maxPeak*0.3)off.push(6-i);
+      });
+      if(off.length>0&&off.length<=2)
+        return off.map(n=>n+'弦').join('・')+' が半音ズレて聞こえます。押さえる位置かチューニングを確認';
+    }
+    /* 余計な音: 構成音でも倍音でもない音が強く混ざっている */
+    const okSet=new Set();
+    targetPcs().forEach(p=>{okSet.add(p);okSet.add((p+7)%12);okSet.add((p+4)%12);});
+    const mv=Math.max(...vec,1e-9);
+    let bad=-1,bv=0;
+    vec.forEach((v,i)=>{if(!okSet.has(i)&&v>bv){bv=v;bad=i;}});
+    if(bad>=0&&bv>mv*0.3)
+      return `余計な音(${NOTE_NAMES[bad]})が混ざってます。指が隣の弦に触れてないか確認`;
+    return '';
+  }
+
+  function targetPcs(){
+    const pcs=chordToPcs(target)||[];
+    const capo=getCapo();
+    return pcs.map(p=>(p+capo)%12);   /* カポ分だけ実音に移調 */
+  }
+  function paintBars(){
+    const set=new Set(targetPcs());
+    bars.forEach((b,i)=>b.classList.toggle('hit',set.has(i)));
+  }
+  buildCards();
+  document.getElementById('capoInput').addEventListener('input',()=>{paintBars();renderStrPanel();});
+
+  function setVerdict(cls,mark,text){
+    verdict.className='verdict'+(cls?' '+cls:'');
+    vMark.textContent=mark;vText.textContent=text;
+  }
+
+  let smooth=new Array(12).fill(0),goodStreak=0;
+  let cEma=0,cWasQuiet=true,cLastOnset=-1,capturing=false,capStart=0,capN=0,hasVerdict=false;
+  let holdUntil=0,lastCat='',catStreak=0;
+  const capBuf=new Array(12).fill(0);
+  /* 実音のコード名をカポ分戻してシェイプ名で表示(例: カポ2でC#m7→Bm7の形) */
+  function rivalToShape(name){
+    const m=name.match(/^([A-G]#?)(.*)$/);
+    if(!m)return name;
+    const pc=NOTE_NAMES.indexOf(m[1]);
+    if(pc<0)return name;
+    return NOTE_NAMES[(pc-getCapo()+12)%12]+m[2]+'(の形)';
+  }
+  function tick(){
+    if(!FEATURES.checker){requestAnimationFrame(tick);return;}   /* OFF中は処理しない */
+    if(micOn&&analyser&&!running){
+      const {chroma,total,data,binHz}=chromaFrame();
+      for(let i=0;i<12;i++) smooth[i]=smooth[i]*0.7+chroma[i]*0.3;
+      const sSum=smooth.reduce((a,b)=>a+b,0)||1e-9;
+      const maxV=Math.max(...smooth,1e-9);
+      bars.forEach((b,i)=>b.style.height=Math.max(4,(smooth[i]/maxV)*100)+'%');
+
+      /* --- 弦ごとの検出 --- */
+      const cells=strPanel.children;
+      if(total>=0.004){
+        if(wasQuiet){strPeaks.fill(0);strNb.fill(0);strFrames=0;wasQuiet=false;}   /* 新しいジャンでリセット */
+        strFrames++;
+        const midis=stringMidis();
+        midis.forEach((m,i)=>{
+          if(m===null)return;
+          strPeaks[i]=Math.max(strPeaks[i],noteStrength(data,binHz,m));
+          strNb[i]=Math.max(strNb[i],noteStrength(data,binHz,m+1),noteStrength(data,binHz,m-1));
+        });
+        if(strFrames>5){   /* 蓄積が安定してから表示・診断に反映 */
+        const maxPeak=Math.max(...strPeaks,1e-9);
+        midis.forEach((m,i)=>{
+          const cell=cells[i];if(!cell||m===null)return;
+          const on=strPeaks[i]>maxPeak*0.1&&strPeaks[i]>1e-5;
+          cell.classList.toggle('on',on);
+          cell.classList.toggle('off',!on);
+        });
+        }
+      }else{
+        wasQuiet=true;   /* 表示は直近のジャンの結果を保持 */
+      }
+
+      /* --- 判定 --- */
+      const nowT=audioCtx.currentTime;
+      const isQuiet=total<0.004;
+      /* オンセット: 静→動の遷移、またはベースライン(ゆっくり追従)比での急増 */
+      if(!isQuiet&&(cWasQuiet||total>cEma*1.7)&&nowT-cLastOnset>0.15){
+        cLastOnset=nowT;capturing=true;capStart=nowT;capBuf.fill(0);capN=0;
+      }
+      cEma=cEma*0.9+total*0.1;
+      cWasQuiet=isQuiet;
+
+      function judgeVec(vec){
+        const {sim,margin,rival,rivalSim}=analyzeChord(vec,targetPcs());
+        /* ○昇格は「強い直接証拠」がある時だけ: 全弦がはっきり(最大の18%以上)鳴っていて、
+           かつテンプレート照合もそこそこ良い場合に限る */
+        const midis=stringMidis();
+        const maxPeak=Math.max(...strPeaks,1e-9);
+        const strongAllOn=maxPeak>1e-5&&midis.every((m,i)=>m===null||strPeaks[i]>maxPeak*0.18);
+        if((sim>0.72&&margin>-0.05)||(strongAllOn&&sim>0.6&&margin>-0.15))
+          return {cat:'good',mark:'○',text:`${target} 鳴ってます!その調子`};
+        const hint=diagnose(vec)
+          ||((rival&&rivalSim>sim)?explainRival(rival,vec):'')
+          ||weakHint(vec)
+          ||'下の棒グラフで、木の色(鳴らすべき音)の棒が高く伸びるように鳴らしてみて';
+        if(sim>0.55)return {cat:'close',mark:'△',text:'惜しい。'+hint};
+        return {cat:'bad',mark:'×',text:'ちがう響きになってます。'+hint};
+      }
+
+      if(capturing){
+        const dt=nowT-capStart;
+        if(dt>0.06&&dt<0.5&&total>0.002){   /* アタック直後の綺麗な区間を採取 */
+          for(let i=0;i<12;i++)capBuf[i]+=chroma[i];
+          capN++;
+        }
+        if(dt>=0.5){
+          capturing=false;
+          if(capN>2){
+            const v=judgeVec(capBuf.map(x=>x/capN));
+            setVerdict(v.cat,v.mark,v.text);
+            hasVerdict=true;holdUntil=nowT+1.2;   /* 精密判定は少し保持 */
+            lastCat=v.cat;catStreak=0;
+            if(window.LESSON)LESSON.onVerdict(v.cat==='good',target);
+          }
+        }
+      }else if(!isQuiet&&nowT>holdUntil){
+        /* フォールバック: オンセットが取れなくても鳴っていれば常時判定 */
+        const v=judgeVec(smooth);
+        if(v.cat===lastCat)catStreak++;else{lastCat=v.cat;catStreak=0;}
+        if(catStreak>=4){
+          setVerdict(v.cat,v.mark,v.text);hasVerdict=true;
+          if(catStreak===4&&window.LESSON)LESSON.onVerdict(v.cat==='good',target);
+        }
+      }
+      if(isQuiet&&!capturing&&!hasVerdict){
+        setVerdict('','…',`${target} を選択中。ジャンと鳴らしてみて`);
+      }
+    }else if(!micOn){
+      setVerdict('','—','コードを選んでマイクをONに');
+      bars.forEach(b=>b.style.height='4%');
+      smooth.fill(0);goodStreak=0;
+      [...strPanel.children].forEach(c=>c.classList.remove('on','off'));
+      strPeaks.fill(0);strNb.fill(0);wasQuiet=true;
+    }
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+/* ===== レッスンモード ===== */
+window.LESSON=(function(){
+  const STAGE_SETS={
+  hoshi:[
+    {type:'drill',title:'ホームコード Am7',desc:'この曲の主役。○を3回出そう',steps:[['Am7',3]]},
+    {type:'drill',title:'簡単なF、Fmaj7',desc:'F最大の壁を簡単フォームで回避。○を3回',steps:[['Fmaj7',3]]},
+    {type:'drill',title:'CとGを行き来',desc:'イントロの土台。各○2回',steps:[['C',2],['G',2]]},
+    {type:'drill',title:'Bメロの新顔たち',desc:'Dm7・Em7・E7を各○2回',steps:[['Dm7',2],['Em7',2],['E7',2]]},
+    {type:'change',title:'チェンジ分解: Am7→Fmaj7',desc:'1指ずつ動かして体で覚える',pair:['Am7','Fmaj7']},
+    {type:'change',title:'チェンジ分解: C→G',desc:'定番の行き来を1指ずつ',pair:['C','G']},
+    {type:'game',title:'イントロ進行ループ',desc:'BPM60でCランク以上',seq:()=>SONG_PRESETS.loop.seq,bpm:60,minAcc:0.35,passLabel:'Cランク以上'},
+    {type:'game',title:'サビに挑戦',desc:'BPM70でBランク以上',seq:()=>HOSHI.sabi,bpm:70,minAcc:0.55,passLabel:'Bランク以上'},
+    {type:'game',title:'イントロ〜Bメロ',desc:'BPM80でBランク以上。N.C.のブレイクも体感しよう',seq:()=>[HOSHI.intro,HOSHI.aMelo,HOSHI.bMelo].join('\n'),bpm:80,minAcc:0.55,passLabel:'Bランク以上'},
+    {type:'game',title:'サビを原曲の7割で',desc:'BPM100でAランク以上',seq:()=>HOSHI.sabi,bpm:100,minAcc:0.75,passLabel:'Aランク以上'},
+    {type:'game',title:'Cメロ〜ラスサビ',desc:'Fm6の山場込み。BPM100でBランク以上',seq:()=>[HOSHI.cMelo,HOSHI.ochi,HOSHI.sabi,HOSHI.outro].join('\n'),bpm:100,minAcc:0.55,passLabel:'Bランク以上'},
+    {type:'game',title:'卒業試験:フルを原曲テンポで',desc:'BPM137でBランク以上。バンド合わせデビューへ',seq:()=>SONG_PRESETS.full.seq,bpm:137,minAcc:0.55,passLabel:'Bランク以上'},
+  ],
+  kimi:[
+    {type:'drill',title:'ホームコード G',desc:'この曲の主役。○を3回出そう',steps:[['G',3]]},
+    {type:'drill',title:'Cの仲間たち',desc:'Cadd9とCmaj7を各○2回。Gと指の形が近い',steps:[['Cadd9',2],['Cmaj7',2]]},
+    {type:'drill',title:'DとEm7',desc:'Aメロの残りピース。各○2回',steps:[['D',2],['Em7',2]]},
+    {type:'drill',title:'サビの難所',desc:'B7・Bm7・C#m7-5を各○2回。見た目より簡単',steps:[['B7',2],['Bm7',2],['C#m7-5',2]]},
+    {type:'change',title:'チェンジ分解: G→Cadd9',desc:'Aメロの核。3本まとめて1本内側へ平行移動',pair:['G','Cadd9']},
+    {type:'change',title:'チェンジ分解: G→D',desc:'サビ頭のチェンジを1指ずつ',pair:['G','D']},
+    {type:'change',title:'チェンジ分解: Cmaj7→B7',desc:'サビ最大の難所を分解して攻略',pair:['Cmaj7','B7']},
+    {type:'game',title:'Aメロを回す',desc:'BPM90でCランク以上。白玉中心で入門に最適',seq:()=>KIMI.aMelo,bpm:90,minAcc:0.35,passLabel:'Cランク以上'},
+    {type:'game',title:'サビに挑戦',desc:'BPM100でBランク以上',seq:()=>KIMI.sabi,bpm:100,minAcc:0.55,passLabel:'Bランク以上'},
+    {type:'game',title:'イントロ〜Bメロ',desc:'D#系とブレイク込み。BPM110でBランク以上',seq:()=>[KIMI.intro,KIMI.aMelo,KIMI.bMelo].join('\n'),bpm:110,minAcc:0.55,passLabel:'Bランク以上'},
+    {type:'game',title:'サビを原曲の9割で',desc:'BPM125でAランク以上',seq:()=>KIMI.sabi,bpm:125,minAcc:0.75,passLabel:'Aランク以上'},
+    {type:'game',title:'Cメロ〜ラスト',desc:'ソロ・落ちサビのキメ込み。BPM120でBランク以上',seq:()=>[KIMI.cMelo,KIMI.solo,KIMI.ochi,KIMI.lastSabi,KIMI.outro].join('\n'),bpm:120,minAcc:0.55,passLabel:'Bランク以上'},
+    {type:'game',title:'卒業試験:フルを原曲テンポで',desc:'BPM144でBランク以上。バンド合わせデビューへ',seq:()=>SONG_PRESETS.kimiFull.seq,bpm:144,minAcc:0.55,passLabel:'Bランク以上'},
+  ]};
+  const STORE_KEYS={hoshi:'lesson-progress',kimi:'lesson-progress-kimi'};
+  let mode='kimi';
+  const doneMap={hoshi:STAGE_SETS.hoshi.map(()=>false),kimi:STAGE_SETS.kimi.map(()=>false)};
+  const STAGES_=()=>STAGE_SETS[mode];
+  const done_=()=>doneMap[mode];
+  let drill=null;          /* {kind:'drill'|'change',...} */
+  let drillAnim=null;      /* ドリル内の指移動アニメ */
+  let pendingGame=null;    /* ゲーム課題として起動中のステージindex */
+  (function dLoop(){tickMoveAnim(drillAnim);requestAnimationFrame(dLoop);})();
+
+  const listEl=document.getElementById('stageList');
+  const drillBox=document.getElementById('drillBox');
+  const drillTitle=document.getElementById('drillTitle');
+  const drillDots=document.getElementById('drillDots');
+
+  async function load(){
+    for(const k of ['hoshi','kimi']){
+      try{
+        const r=await window.storage.get(STORE_KEYS[k]);
+        if(r){const p=JSON.parse(r.value);if(Array.isArray(p.done))doneMap[k]=STAGE_SETS[k].map((_,i)=>!!p.done[i]);}
+      }catch(e){/* 保存なし or 非対応環境 → 最初から */}
+    }
+    renderList();
+  }
+  async function save(){
+    try{await window.storage.set(STORE_KEYS[mode],JSON.stringify({done:done_()}));}catch(e){}
+  }
+
+  function currentIdx(){const i=done_().findIndex(d=>!d);return i<0?STAGE_SETS[mode].length:i;}
+
+  function renderList(){
+    const STAGES=STAGES_(),done=done_();
+    const cur=currentIdx();
+    listEl.innerHTML=STAGES.map((s,i)=>{
+      const st=done[i]?'done':(i===cur?'current':'');
+      const mark=done[i]?'★':(i+1);
+      const label=s.type==='drill'?'ドリル開始':'プレイ';
+      const btn=(i===cur)
+        ?`<button class="btn btn-main" data-i="${i}">${label}</button>`
+        :`<button class="btn btn-ghost" data-i="${i}">${done[i]?'もう一回':label}</button>`;
+      return `<li class="stage ${st}"><div class="st-mark">${mark}</div>
+        <div class="st-body"><div class="st-title">${s.title}</div><div class="st-desc">${s.desc}</div></div>${btn}</li>`;
+    }).join('')+(cur>=STAGES.length?'<li class="stage"><div class="st-mark">♪</div><div class="st-body"><div class="st-title">全ステージクリア!卒業おめでとう</div><div class="st-desc">ここから先はバンドの合わせで磨こう</div></div></li>':'');
+    listEl.querySelectorAll('[data-i]').forEach(b=>b.addEventListener('click',()=>startStage(+b.dataset.i)));
+  }
+
+  function startStage(i){
+    const s=STAGES_()[i];
+    if(s.type==='drill'||s.type==='change'){
+      if(!FEATURES.checker)document.getElementById('checkerToggle').click();
+      if(!micOn)micToggle.click();
+      if(s.type==='drill'){
+        drill={kind:'drill',stage:i,step:0,got:0};
+        setupDrillStep();
+      }else{
+        drill={kind:'change',stage:i,steps:buildChangeSteps(s.pair[0],s.pair[1]),idx:0};
+        setupChangeStep();
+      }
+      drillBox.style.display='block';
+      document.getElementById('checker').scrollIntoView({behavior:'smooth'});
+    }else{
+      document.getElementById('seqInput').value=s.seq().trim();
+      document.getElementById('bpmInput').value=s.bpm;
+      document.getElementById('loopInput').value=1;
+      document.getElementById('rampInput').value=0;
+      const ci=document.getElementById('capoInput');
+      ci.value=(mode==='kimi')?4:2;
+      ci.dispatchEvent(new Event('input'));
+      pendingGame=i;
+      document.getElementById('startBtn').click();
+    }
+  }
+
+  /* チェンジ分解: 鳴らす→全指まとめて移動→鳴らす→仕上げの往復 */
+  function buildChangeSteps(a,b){
+    const items=(fingerMoveItems(a,b)||[])
+      .filter(it=>!(it.mode==='move'&&it.from.st===it.to.st&&it.from.fr===it.to.fr));  /* 動かない指は省略 */
+    const steps=[{kind:'strum',chord:a,label:`まず ${a} を押さえて、ジャン!で ○`}];
+    if(items.length)steps.push({kind:'move',items,label:`指をまとめて動かして ${b} の形へ`});
+    steps.push({kind:'strum',chord:b,label:`${b} になった!ジャン!で ○`});
+    steps.push({kind:'strum',chord:a,label:`仕上げ: ${a} に戻して ○`});
+    steps.push({kind:'strum',chord:b,label:`仕上げ: 一気に ${b} へチェンジして ○`});
+    return steps;
+  }
+  function setChecker(chord){
+    const el=document.querySelector(`.chord[data-n="${chord}"]`);
+    if(el)el.click();
+  }
+  function renderDots(total,idx){
+    drillDots.innerHTML=Array.from({length:total},(_,k)=>`<i class="${k<idx?'got':''}"></i>`).join('');
+  }
+  function setupChangeStep(){
+    const st=drill.steps[drill.idx];
+    drillTitle.textContent=`Step ${drill.idx+1}/${drill.steps.length}: ${st.label}`;
+    renderDots(drill.steps.length,drill.idx);
+    const svgBox=document.getElementById('drillMoveSvg');
+    const nextBtn=document.getElementById('drillNext');
+    if(st.kind==='move'){
+      drillAnim=renderMoveSVG(svgBox,st.items);
+      nextBtn.style.display='';
+      document.getElementById('drillHint').innerHTML=
+        st.items.map(describeMove).join('<br>')+'<br>アニメの通りに動かしたら「できた、次へ」。音は鳴らさなくてOK。';
+    }else{
+      drillAnim=null;svgBox.innerHTML='';
+      nextBtn.style.display='none';
+      setChecker(st.chord);
+      document.getElementById('drillHint').textContent='チェッカーが自動でこのコードになっています。ジャン!と鳴らして○を出そう。';
+    }
+  }
+  function advanceChange(){
+    drill.idx++;
+    if(drill.idx>=drill.steps.length)completeStage();
+    else setupChangeStep();
+  }
+  function completeStage(){
+    done_()[drill.stage]=true;save();
+    closeDrill();
+    renderList();
+    document.getElementById('lesson').scrollIntoView({behavior:'smooth'});
+  }
+  function closeDrill(){
+    drill=null;drillAnim=null;
+    drillBox.style.display='none';
+    document.getElementById('drillMoveSvg').innerHTML='';
+    document.getElementById('drillNext').style.display='none';
+  }
+
+  function setupDrillStep(){
+    const s=STAGES_()[drill.stage];
+    const [chord,need]=s.steps[drill.step];
+    setChecker(chord);
+    drillAnim=null;document.getElementById('drillMoveSvg').innerHTML='';
+    document.getElementById('drillNext').style.display='none';
+    document.getElementById('drillHint').textContent='チェッカーが自動でこのコードになっています。ジャン!と鳴らして○を集めよう。';
+    drillTitle.textContent=`${chord} を鳴らそう(あと ${need-drill.got} 回)`;
+    drillDots.innerHTML=Array.from({length:need},(_,k)=>`<i class="${k<drill.got?'got':''}"></i>`).join('');
+  }
+
+  function onVerdict(ok,chordName){
+    if(!drill)return;
+    if(drill.kind==='change'){
+      const st=drill.steps[drill.idx];
+      if(st.kind==='strum'&&chordName===st.chord&&ok)advanceChange();
+      return;
+    }
+    const s=STAGES_()[drill.stage];
+    const [chord,need]=s.steps[drill.step];
+    if(chordName!==chord||!ok)return;
+    drill.got++;
+    if(drill.got>=need){
+      if(drill.step<s.steps.length-1){drill.step++;drill.got=0;setupDrillStep();}
+      else completeStage();
+    }else setupDrillStep();
+  }
+
+  function onGameResult({acc}){
+    if(pendingGame===null)return;
+    const s=STAGES_()[pendingGame];
+    const sub=document.getElementById('rankSub');
+    if(acc!==null&&acc>=s.minAcc){
+      done_()[pendingGame]=true;save();
+      sub.textContent+=' — レッスン課題クリア!';
+      renderList();
+    }else{
+      sub.textContent+=` — レッスン課題は${s.passLabel}で合格。もう一回いこう`;
+    }
+    pendingGame=null;
+  }
+
+  function setMode(m){
+    if(!STAGE_SETS[m])return;
+    mode=m;
+    closeDrill();pendingGame=null;
+    renderList();
+  }
+
+  document.getElementById('drillQuit').addEventListener('click',closeDrill);
+  document.getElementById('drillNext').addEventListener('click',()=>{
+    if(drill&&drill.kind==='change'&&drill.steps[drill.idx].kind==='move')advanceChange();
+  });
+
+  load();
+  return {onVerdict,onGameResult,setMode};
+})();
+
+/* ===== かんたん譜面ビルダー ===== */
+document.querySelectorAll('.subtab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.subtab').forEach(x=>x.classList.toggle('active',x===t));
+  ['panelPresets','panelBuilder','panelPairs'].forEach(id=>
+    document.getElementById(id).hidden=(id!==t.dataset.p));
+}));
+const PALETTE={beats:4};
+let lastSel=null;
+const seqEl=document.getElementById('seqInput');
+['select','keyup','mouseup','touchend'].forEach(ev=>seqEl.addEventListener(ev,()=>{
+  if(seqEl.selectionStart!==seqEl.selectionEnd)lastSel={s:seqEl.selectionStart,e:seqEl.selectionEnd};
+}));
+seqEl.addEventListener('input',()=>{lastSel=null;});
+function songChordList(){
+  const src=(window.SONG_MODE==='hoshi')?HOSHI:KIMI;
+  const seen=[];
+  Object.values(src).join(' ').split(/\s+/).forEach(t=>{
+    if(!t||/^【.*】$/.test(t)||t==='-')return;
+    let n=t;
+    const si=n.lastIndexOf('*');if(si>0)n=n.slice(0,si);
+    const ci=n.lastIndexOf(':');if(ci>0)n=n.slice(0,ci);
+    if(n!=='N.C.'&&!seen.includes(n))seen.push(n);
+  });
+  return seen;
+}
+function renderPalette(){
+  const row=document.getElementById('chordPalette');
+  row.innerHTML=songChordList().map(n=>`<button class="chip" data-c="${n}">${n}</button>`).join('')
+    +`<button class="chip" data-c="N.C.">N.C.(休み)</button><button class="chip" data-c="-">-(伸ばす)</button>`;
+  row.querySelectorAll('.chip').forEach(ch=>ch.addEventListener('click',()=>{
+    const c=ch.dataset.c;
+    const tok=(c!=='-'&&PALETTE.beats!==4)?c+':'+PALETTE.beats:c;
+    seqEl.value=(seqEl.value.trimEnd()+' '+tok).trim();
+    lastSel=null;
+  }));
+}
+[['pb4',4],['pb2',2],['pb1',1]].forEach(([id,b])=>{
+  document.getElementById(id).addEventListener('click',()=>{
+    PALETTE.beats=b;
+    ['pb4','pb2','pb1'].forEach(x=>document.getElementById(x).classList.toggle('active',x===id));
+  });
+});
+document.getElementById('palUndo').addEventListener('click',()=>{
+  const t=seqEl.value.trim().split(/\s+/);t.pop();
+  seqEl.value=t.join(' ');lastSel=null;
+});
+document.getElementById('palClear').addEventListener('click',()=>{seqEl.value='';lastSel=null;});
+function getRange(){
+  const v=seqEl.value;
+  if(lastSel&&lastSel.e>lastSel.s)return {pre:v.slice(0,lastSel.s),sel:v.slice(lastSel.s,lastSel.e),post:v.slice(lastSel.e)};
+  return {pre:'',sel:v,post:''};
+}
+document.querySelectorAll('#rangeRow [data-rep]').forEach(ch=>ch.addEventListener('click',()=>{
+  const n=+ch.dataset.rep;
+  const {pre,sel,post}=getRange();
+  const s=sel.trim();if(!s)return;
+  const rep=Array(n).fill(s).join('\n');
+  seqEl.value=[pre.trimEnd(),rep,post.trimStart()].filter(x=>x).join('\n').trim();
+  lastSel=null;
+}));
+/* 範囲内のトークンの拍数を書き換える(*回数と見出しは保持) */
+function setBeatsInText(text,b){
+  return text.split(/(\s+)/).map(t=>{
+    if(!t.trim()||/^【.*】$/.test(t)||t==='-')return t;
+    let strums='',n=t;
+    const si=n.lastIndexOf('*');if(si>0){strums=n.slice(si);n=n.slice(0,si);}
+    const ci=n.lastIndexOf(':');if(ci>0)n=n.slice(0,ci);
+    return n+(b!==4?':'+b:'')+strums;
+  }).join('');
+}
+document.querySelectorAll('#rangeRow [data-rb]').forEach(ch=>ch.addEventListener('click',()=>{
+  const b=+ch.dataset.rb;
+  const {pre,sel,post}=getRange();
+  seqEl.value=(pre+setBeatsInText(sel,b)+post).trim();
+  lastSel=null;
+}));
+
+/* ===== チェンジ特訓: 曲中のコード移動を抽出して反復セットを生成 ===== */
+const PAIR_DRILL={pair:null,beats:2};
+function extractPairs(){
+  const src=(window.SONG_MODE==='hoshi')?HOSHI:KIMI;
+  const names=[];
+  Object.values(src).join(' ').split(/\s+/).forEach(t=>{
+    if(!t||/^【.*】$/.test(t)||t==='-')return;   /* 伸ばしはチェンジなし */
+    let n=t;
+    const si=n.lastIndexOf('*');if(si>0)n=n.slice(0,si);
+    const ci=n.lastIndexOf(':');if(ci>0)n=n.slice(0,ci);
+    names.push(n);
+  });
+  const counts={};
+  for(let i=0;i<names.length-1;i++){
+    const a=names[i],b=names[i+1];
+    if(a===b||a==='N.C.'||b==='N.C.')continue;
+    const k=a+'→'+b;
+    counts[k]=(counts[k]||0)+1;
+  }
+  return Object.entries(counts).sort((x,y)=>y[1]-x[1]).slice(0,10);
+}
+function genPairSeq(){
+  if(!PAIR_DRILL.pair)return;
+  const [a,b]=PAIR_DRILL.pair.split('→');
+  const bt=PAIR_DRILL.beats;
+  const unit=bt===4?`${a} ${b}`:`${a}:${bt} ${b}:${bt}`;
+  const reps=bt===4?4:(bt===2?8:16);   /* どの刻みでも1周=8小節 */
+  document.getElementById('seqInput').value=Array(reps).fill(unit).join(' ');
+  document.getElementById('bpmInput').value=80;
+  document.getElementById('loopInput').value=3;
+  document.getElementById('rampInput').value=5;
+  document.querySelectorAll('#presetRow .chip').forEach(x=>x.classList.remove('active'));
+}
+function renderPairDrills(){
+  const row=document.getElementById('pairRow');
+  row.innerHTML=extractPairs().map(([k,c])=>
+    `<button class="chip" data-pair="${k}">${k} <small>×${c}</small></button>`).join('');
+  row.querySelectorAll('.chip').forEach(ch=>ch.addEventListener('click',()=>{
+    PAIR_DRILL.pair=ch.dataset.pair;
+    row.querySelectorAll('.chip').forEach(x=>x.classList.toggle('active',x===ch));
+    genPairSeq();
+  }));
+}
+document.querySelectorAll('#pairBeatRow .chip').forEach(ch=>ch.addEventListener('click',()=>{
+  PAIR_DRILL.beats=+ch.dataset.b;
+  document.querySelectorAll('#pairBeatRow .chip').forEach(x=>x.classList.toggle('active',x===ch));
+  genPairSeq();
+}));
+
+/* ===== 曲モード(デフォルト: 君に届け) ===== */
+window.SONG_MODE='kimi';
+(function(){
+  const btn=document.getElementById('songModeBtn');
+  function applyMode(){
+    const kimi=(SONG_MODE==='kimi');
+    /* プリセットの出し分け */
+    document.querySelectorAll('#presetRow .chip').forEach(ch=>{
+      const isKimi=(ch.dataset.key||'').startsWith('kimi');
+      ch.style.display=(isKimi===kimi)?'':'none';
+      ch.classList.remove('active');
+    });
+    /* デフォルトの進行・BPM・カポ */
+    const def=kimi?SONG_PRESETS.kimiSabi:SONG_PRESETS.sabi;
+    document.getElementById('seqInput').value=def.seq.trim();
+    document.getElementById('bpmInput').value=def.bpm;
+    const ci=document.getElementById('capoInput');
+    ci.value=def.capo;
+    ci.dispatchEvent(new Event('input'));
+    /* ヘッダー・チェッカー・レッスンを連動 */
+    document.querySelector('header .sub').textContent=
+      kimi?'流れてくるコードに合わせて鳴らそう。門下曲:君に届け(カポ4)':'流れてくるコードに合わせて鳴らそう。門下曲:星に願いを(カポ2)';
+    if(window.__checkerRebuild)__checkerRebuild();
+    if(window.LESSON&&LESSON.setMode)LESSON.setMode(SONG_MODE);
+    PAIR_DRILL.pair=null;
+    renderPairDrills();
+    renderPalette();
+    btn.textContent=kimi?'別の門下曲(星に願いを)に切り替える':'君に届けに戻る';
+  }
+  btn.addEventListener('click',()=>{
+    window.SONG_MODE=(SONG_MODE==='kimi')?'hoshi':'kimi';
+    applyMode();
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+  applyMode();
+})();
+</script>
+</body>
+</html>
